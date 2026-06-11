@@ -1,0 +1,140 @@
+diff --git a/agent_space/skl_a2/skl_aten_overrides.cpp b/agent_space/skl_a2/skl_aten_overrides.cpp
+new file mode 100644
+index 00000000000..a971aaef4da
+--- /dev/null
++++ b/agent_space/skl_a2/skl_aten_overrides.cpp
+@@ -0,0 +1,35 @@
++#include <torch/library.h>
++#include <ATen/ATen.h>
++#include <cstdio>
++
++// stand-in for the SKL vendor gemm: naive loops, NO at::mm anywhere (recursion!)
++static void skl_sgemm(const float* a, const float* b, float* c,
++                      int64_t m, int64_t k, int64_t n) {
++  std::fprintf(stderr, "[SKL] sgemm %ldx%ldx%ld\n", (long)m, (long)k, (long)n);
++  for (int64_t i = 0; i < m; i++)
++    for (int64_t j = 0; j < n; j++) {
++      float acc = 0.f;
++      for (int64_t p = 0; p < k; p++) acc += a[i*k+p] * b[p*n+j];
++      c[i*n+j] = acc;
++    }
++}
++
++static at::Tensor& skl_mm_out(const at::Tensor& self, const at::Tensor& mat2, at::Tensor& out) {
++  TORCH_CHECK(self.dim()==2 && mat2.dim()==2, "skl_mm_out: 2-D only");
++  TORCH_CHECK(self.scalar_type()==at::kFloat, "skl_mm_out: float32 only (demo)");
++  auto a = self.contiguous(); auto b = mat2.contiguous();
++  out.resize_({a.size(0), b.size(1)});
++  skl_sgemm(a.const_data_ptr<float>(), b.const_data_ptr<float>(),
++            out.mutable_data_ptr<float>(), a.size(0), a.size(1), b.size(1));
++  return out;
++}
++
++static at::Tensor skl_mm(const at::Tensor& self, const at::Tensor& mat2) {
++  auto out = at::empty({self.size(0), mat2.size(1)}, self.options());
++  return skl_mm_out(self, mat2, out);
++}
++
++TORCH_LIBRARY_IMPL(aten, CPU, m) {
++  m.impl("mm",     skl_mm);       // eager a @ b
++  m.impl("mm.out", skl_mm_out);   // extern_kernels.mm path
++}
+diff --git a/agent_space/skl_a2/driver.py b/agent_space/skl_a2/driver.py
+new file mode 100644
+index 00000000000..b9c74738b62
+--- /dev/null
++++ b/agent_space/skl_a2/driver.py
+@@ -0,0 +1,31 @@
++import torch
++import torch._inductor.config as ind
++from torch.utils import cpp_extension
++
++
++ind.force_disable_caches = True
++
++
++def cpu_slot():
++    return [
++        l
++        for l in torch._C._dispatch_dump("aten::mm").splitlines()
++        if l.startswith("CPU")
++    ]
++
++
++print("BEFORE:", cpu_slot())
++cpp_extension.load(
++    name="skl_aten_overrides",
++    sources=["agent_space/skl_a2/skl_aten_overrides.cpp"],
++    is_python_module=False,
++    verbose=False,
++)
++print("AFTER: ", cpu_slot())
++
++a, b = torch.randn(32, 16), torch.randn(16, 8)
++ref = (a.unsqueeze(2) * b.unsqueeze(0)).sum(1)  # mm-free reference
++print("eager a@b correct:", torch.allclose(a @ b, ref, atol=1e-4))
++
++f = torch.compile(lambda x, w: torch.relu(x @ w))
++print("compiled correct:", torch.allclose(f(a, b), torch.relu(ref), atol=1e-4))
+diff --git a/agent_space/skl_a2/README.md b/agent_space/skl_a2/README.md
+new file mode 100644
+index 00000000000..8d6b30847e0
+--- /dev/null
++++ b/agent_space/skl_a2/README.md
+@@ -0,0 +1,56 @@
++# A2: route aten::mm to SKL via dispatcher override (out-of-tree, zero PyTorch changes)
++
++Verified live on pytorch@0a327fa (CPU build): the override took the (aten::mm, CPU)
++dispatch slot from torchgen's generated wrapper; eager `a @ b` and compiled
++`extern_kernels.mm` both landed in it. See the book, Ch7, card A.
++
++## Files
++- `skl_aten_overrides.cpp` — the override. `skl_sgemm()` is a STAND-IN (naive loops);
++  for real SKL, delete it, declare the vendor symbol, and link with `-lskl`.
++- `driver.py` — build + load + verify (dispatch dump before/after, eager + compiled checks).
++
++## Use
++JIT (compile + dlopen in one step):
++    python driver.py
++    # the built .so is cached (and reused across runs; recompiled only on source change) at:
++    #   $TORCH_EXTENSIONS_DIR or ~/.cache/torch_extensions/py<ver>_cpu/skl_aten_overrides/skl_aten_overrides.so
++AOT (no compiler needed once the .so exists — verified in a fresh process):
++    torch.ops.load_library("~/.cache/torch_extensions/py314_cpu/skl_aten_overrides/skl_aten_overrides.so")
++    # for deliberate deployment: set TORCH_EXTENSIONS_DIR / pass build_directory= to load(),
++    # or package properly via setup.py + CppExtension and ship that .so
++
++No further API: TORCH_LIBRARY_IMPL is a static initializer — loading IS registering.
++
++## Reproduce (exact commands, as verified on 2026-06-10)
++
++    cd /home/alex/pytorch
++    source .venv/bin/activate        # CPU-only torch 2.13.0a0+git0a327fa built in this venv
++
++    # 1) JIT route: compile + load + verify in one step (~60-90s first run, cached after)
++    python agent_space/skl_a2/driver.py
++
++    # 2) AOT route: prove a FRESH process needs only load_library (no compiler)
++    python - <<'PY'
++    import torch
++    torch.ops.load_library(
++        "/home/alex/.cache/torch_extensions/py314_cpu/skl_aten_overrides/skl_aten_overrides.so")
++    print([l for l in torch._C._dispatch_dump("aten::mm").splitlines() if l.startswith("CPU:")][0])
++    a, b = torch.randn(4, 3), torch.randn(3, 2)
++    print("correct:", torch.allclose(a @ b, (a.unsqueeze(2)*b.unsqueeze(0)).sum(1), atol=1e-5))
++    PY
++
++Expected success markers:
++  - driver.py:  BEFORE -> "registered at .../build/aten/src/ATen/RegisterCPU_0.cpp:3234"
++                Warning "Overriding a previously registered kernel ..."
++                AFTER  -> "registered at .../agent_space/skl_a2/skl_aten_overrides.cpp:32"
++                "[SKL] sgemm 32x16x8" twice (eager + compiled), both "correct: True"
++  - AOT step:   CPU slot at skl_aten_overrides.cpp:32, "[SKL] sgemm 4x3x2", "correct: True"
++
++## Verify it took effect
++    print(torch._C._dispatch_dump("aten::mm"))   # CPU slot should point at this file
++Also: the dispatcher warns "Overriding a previously registered kernel ..." once.
++
++## Notes
++- Override BOTH "mm" (eager) and "mm.out" (extern_kernels.mm path) — done here.
++- Never call at::mm/at::matmul inside the override (re-dispatches into yourself).
++- No register_fake needed: aten::mm's Meta kernel still serves compile-time shapes.

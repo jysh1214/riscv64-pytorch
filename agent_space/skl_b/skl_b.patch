@@ -1,0 +1,55 @@
+diff --git a/torch/_inductor/kernel/mm.py b/torch/_inductor/kernel/mm.py
+index 23391675bd8..d47e306f33c 100644
+--- a/torch/_inductor/kernel/mm.py
++++ b/torch/_inductor/kernel/mm.py
+@@ -137,6 +137,19 @@ def lazy_register_extern_choice(fn):
+ 
+ 
+ aten_mm = ExternKernelChoice(torch.mm, "at::mm_out", op_overload=aten.mm.out)
++
++# SKL (approach B): vendor GEMM as an autotune contestant. The wrapped callable
++# is torch.ops.skl.mm, registered in C++ by the SKL extension (TORCH_LIBRARY(skl))
++# which must be loaded before this module is imported.
++# name= is required: kernel.__name__ is "mm", which would collide with the
++# existing extern_kernels.mm registration.
++skl_mm = ExternKernelChoice(
++    torch.ops.skl.mm,
++    name="skl_mm",
++    has_out_variant=False,
++    op_overload=torch.ops.skl.mm.default,
++)
++
+ aten_mm_dtype = ExternKernelChoice(
+     torch.mm,
+     "at::mm_dtype_out",
+@@ -410,6 +423,8 @@ def tuned_mm(mat1, mat2, out_dtype=None, *, layout=None):
+         templates_to_use.append(aten_handler)
+         if aten_extra_kwargs:
+             kwarg_overrides[aten_handler.uid] = aten_extra_kwargs
++    if out_dtype is None and mat1.get_device().type == "cpu":
++        templates_to_use.append(skl_mm)  # SKL joins the race
+ 
+     if (
+         out_dtype is None
+diff --git a/torch/_inductor/template_heuristics/aten.py b/torch/_inductor/template_heuristics/aten.py
+index ad496c36a40..726ac8c7ebc 100644
+--- a/torch/_inductor/template_heuristics/aten.py
++++ b/torch/_inductor/template_heuristics/aten.py
+@@ -12,6 +12,7 @@ from ..kernel.mm import (
+     aten_bias_addmm,
+     aten_mm,
+     aten_mm_dtype,
++    skl_mm,
+ )
+ from ..kernel.mm_plus_mm import aten_mm_plus_mm
+ from .base import TemplateConfigHeuristics
+@@ -92,3 +93,9 @@ class ATenBiasAddMMConfigHeuristics(
+             and inductor_config.triton.autotune_cublasLt
+         )
+         yield from super()._get_template_configs_impl(kernel_inputs, op_name)
++
++
++# SKL vendor GEMM goes through the same single-choice flow as the ATen externs.
++@register_template_heuristic(skl_mm.uid, None)
++class SKLConfigHeuristics(ATenConfigHeuristics):
++    pass

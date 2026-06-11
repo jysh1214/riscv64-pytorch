@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TorchInductor — One Idea, Fully Traced</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --ink:#e6edf3; --mut:#9aa7b4;
+    --line:#2b333d; --acc:#58a6ff; --grn:#7ee787; --amb:#f0b429; --pink:#ff7b9c;
+    --code:#0b0f14; --pill:#21303f; --shadow:0 6px 24px rgba(0,0,0,.35); --maxw:960px;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  code,pre,.mono{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:grid;grid-template-columns:264px 1fr;min-height:100vh}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;
+    border-right:1px solid var(--line);background:#0b0e13;padding:22px 14px}
+  nav.toc h1{font-size:15px;margin:0 0 3px} nav.toc .sub{color:var(--mut);font-size:12px;margin-bottom:16px}
+  nav.toc a{display:block;color:var(--mut);padding:5px 10px;border-radius:7px;font-size:13.5px}
+  nav.toc a:hover{background:var(--panel);color:var(--ink);text-decoration:none}
+  nav.toc a.active{background:var(--pill);color:var(--ink)}
+  main{max-width:var(--maxw);margin:0 auto;padding:44px 32px 120px;width:100%}
+  section{scroll-margin-top:18px;padding-top:24px}
+  h2{font-size:26px;margin:8px 0 2px;line-height:1.2}
+  h3{font-size:18.5px;margin:28px 0 6px}
+  h4{font-size:15.5px;margin:18px 0 4px}
+  .ch{color:var(--acc);font-size:12.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase}
+  p{margin:10px 0} .mut{color:var(--mut)}
+  .hr{height:1px;background:var(--line);margin:32px 0;border:0}
+  ul,ol{margin:10px 0;padding-left:22px} li{margin:5px 0}
+  .lead{font-size:17.5px;line-height:1.6;background:linear-gradient(90deg,rgba(88,166,255,.08),rgba(88,166,255,0));
+    border-left:3px solid var(--acc);padding:13px 17px;border-radius:0 10px 10px 0;color:#dce6f0;margin:14px 0 6px}
+  .lead b{color:#fff}
+  .src{display:inline-flex;align-items:center;gap:5px;background:var(--pill);border:1px solid #2c3e50;
+    color:#9fd0ff;border-radius:6px;padding:1px 7px;font:600 11.5px/1.6 "SF Mono",ui-monospace,monospace;
+    white-space:nowrap;vertical-align:baseline}
+  .src:hover{background:#243748;text-decoration:none;border-color:var(--acc)}
+  .src::before{content:"\1F517";font-size:10px;opacity:.7}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:13px 15px;overflow:auto;
+    font-size:13px;line-height:1.55;margin:12px 0}
+  pre .c{color:#6e7a87} pre .k{color:#ff7b9c} pre .s{color:#a5d6ff} pre .f{color:#d2a8ff}
+  pre .n{color:#79c0ff} pre .g{color:#7ee787}
+  p code,li code,td code,summary code{background:#1b222b;border:1px solid #28313c;border-radius:5px;
+    padding:.5px 5px;font-size:13px;color:#cdd9e5}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--grn);
+    border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0}
+  .note.warn{border-left-color:var(--amb)}
+  .note .t{font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--grn);margin-bottom:3px}
+  .note.warn .t{color:var(--amb)}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow:hidden}
+  details>summary{cursor:pointer;padding:10px 16px;font-weight:600;font-size:14px;list-style:none;
+    display:flex;align-items:center;gap:9px;user-select:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:"\25B6";color:var(--acc);font-size:10px;transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details>summary:hover{background:var(--panel2)}
+  details .body{padding:2px 18px 16px;border-top:1px solid var(--line)}
+  table{border-collapse:collapse;width:100%;margin:13px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut)}
+  tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+  /* badges */
+  .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    padding:1px 8px;border-radius:5px;margin-right:6px}
+  .b-fused{background:#16341f;color:var(--grn)} .b-ext{background:#0f2b40;color:#79c0ff}
+  .b-aten{background:#3a2c10;color:var(--amb)} .b-dec{background:#2c2150;color:#c8a2ff}
+  .b-step{background:#3a2d52;color:#d2a8ff}
+  /* pipeline selector */
+  .pipe{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+  .stage{flex:1 1 116px;min-width:108px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px;cursor:pointer;transition:.12s;position:relative}
+  .stage:hover{border-color:var(--acc);transform:translateY(-2px)}
+  .stage.sel{border-color:var(--acc);background:#15263a;box-shadow:var(--shadow)}
+  .stage .st{font-size:13.5px;font-weight:600} .stage .sd{font-size:11.5px;color:var(--mut);margin-top:3px;line-height:1.35}
+  #stageDetail{background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin:6px 0 4px;overflow:hidden}
+  #stageDetail .hd{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 16px;
+    background:#13202f;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  #stageDetail .hd .ttl{font-size:15px;font-weight:700}
+  #stageDetail .bd{padding:12px 16px}
+  /* step-through */
+  .steps{counter-reset:s;margin:16px 0}
+  .step{display:grid;grid-template-columns:32px 1fr;gap:13px;margin-bottom:4px;position:relative}
+  .step .num{width:32px;height:32px;border-radius:50%;background:var(--pill);border:1px solid var(--acc);
+    color:#cfe6ff;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13.5px;z-index:2}
+  .step .sbody{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 15px;margin-bottom:13px}
+  .step:not(:last-child)::before{content:"";position:absolute;left:16px;top:32px;bottom:-6px;width:2px;background:var(--line)}
+  .step .h{font-weight:700;font-size:14.5px;margin-bottom:3px}
+  /* decision tree */
+  .dtree{margin:16px 0}
+  .dchips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+  .dchip{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 13px;
+    font:600 12.5px/1.5 "SF Mono",monospace;cursor:pointer;color:var(--mut)}
+  .dchip:hover{border-color:var(--acc);color:var(--ink)}
+  .dchip.on{background:var(--pill);color:#fff;border-color:var(--acc)}
+  .drow{display:flex;align-items:stretch;gap:0;margin:6px 0}
+  .dq{flex:0 0 250px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 13px;
+    font-size:13.5px;position:relative;transition:.15s}
+  .dq .ql{font-weight:700} .dq .qs{color:var(--mut);font-size:11.5px;margin-top:2px}
+  .dq.lit{border-color:var(--acc);background:#15263a;box-shadow:var(--shadow)}
+  .dyes{flex:1;display:flex;align-items:center;padding-left:14px}
+  .dout{border-radius:10px;padding:8px 14px;font-size:13.5px;border:1px solid var(--line);background:var(--panel);
+    opacity:.55;transition:.15s;width:100%}
+  .dout.lit{opacity:1;box-shadow:var(--shadow)}
+  .dout.o-dec.lit{border-color:#7a5cc4;background:#221a38}
+  .dout.o-fused.lit{border-color:#2a543a;background:#12271b}
+  .dout.o-ext.lit{border-color:#1d456b;background:#0f2233}
+  .dout.o-aten.lit{border-color:#5a4a16;background:#241d09}
+  .dconn{display:flex;flex-direction:column;align-items:center;width:250px;flex:0 0 250px;color:#46525f}
+  .dconn .lbl{font:600 10.5px/1.4 "SF Mono",monospace;color:var(--mut)}
+  .dconn .vl{width:2px;height:12px;background:var(--line)}
+  .dconn.lit .vl{background:var(--acc)} .dconn.lit .lbl{color:var(--acc)}
+  #dverdict{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-top:12px;min-height:54px}
+  /* ===== Ch5 big interactive diagram ===== */
+  .big{display:grid;grid-template-columns:minmax(360px,1.15fr) 1fr;gap:14px;margin:18px 0 8px}
+  @media(max-width:980px){.big{grid-template-columns:1fr}}
+  .bigcode{background:var(--code);border:1px solid var(--line);border-radius:12px;padding:12px 8px;overflow:auto}
+  .bigcode .cap{font:600 11px/1.6 "SF Mono",monospace;color:var(--mut);padding:0 8px 8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .cl{display:block;font:13px/1.7 "SF Mono",ui-monospace,monospace;padding:1px 8px;border-radius:6px;white-space:pre;color:#8b97a5}
+  .cl.op{cursor:pointer;color:#cdd9e5}
+  .cl.op:hover{background:#18222e}
+  .cl.op.f-fused.hi{background:#12271b;color:#bff0cd;box-shadow:inset 3px 0 0 var(--grn)}
+  .cl.op.f-ext.hi{background:#0f2233;color:#cfe6ff;box-shadow:inset 3px 0 0 var(--acc)}
+  .cl.op.f-aten.hi{background:#241d09;color:#ffd98a;box-shadow:inset 3px 0 0 var(--amb)}
+  .bigmap{display:flex;gap:8px;align-items:stretch}
+  .bcol{flex:1;display:flex;flex-direction:column;gap:0;cursor:pointer;border-radius:12px;padding:8px 6px;
+    border:1px solid transparent;transition:.15s;opacity:.6}
+  .bcol:hover{opacity:.85}
+  .bcol.hi{opacity:1;border-color:var(--line);background:rgba(255,255,255,.015);box-shadow:var(--shadow)}
+  .bcap{text-align:center;font:700 11.5px/1.8 "SF Mono",monospace;border-radius:6px;padding:1px 7px;margin:0 auto 6px}
+  .bcap.c-fused{color:var(--grn);background:#11261c;border:1px solid #1e3a2a}
+  .bcap.c-ext{color:#79c0ff;background:#0f2b40;border:1px solid #1d456b}
+  .bcap.c-aten{color:var(--amb);background:#2c2208;border:1px solid #5a4a16}
+  .bnode{border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12.5px;text-align:center;background:#16202c}
+  .bcol.hi .bnode.c-fused{background:#12271b;border-color:#2a543a;color:#bff0cd}
+  .bcol.hi .bnode.c-ext{background:#0f2233;border-color:#1d456b;color:#cfe6ff}
+  .bcol.hi .bnode.c-aten{background:#241d09;border-color:#5a4a16;color:#ffd98a}
+  .bvl{display:flex;flex-direction:column;align-items:center;padding:2px 0}
+  .bvl i{width:2px;height:10px;background:var(--line)} .bvl b{color:#46525f;font-size:9px;line-height:1}
+  #bigDetail{background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin:10px 0;overflow:hidden}
+  #bigDetail .hd{padding:11px 16px;background:#13202f;border-bottom:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+  #bigDetail .hd .ttl{font-weight:700;font-size:15px}
+  #bigDetail .bd{padding:13px 17px}
+  .who{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  @media(max-width:760px){.who{grid-template-columns:1fr}}
+  .who>div{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:13px}
+  .who .wt{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);font-weight:700}
+  footer{max-width:var(--maxw);margin:0 auto;padding:28px 32px 80px;color:var(--mut);font-size:13px;border-top:1px solid var(--line)}
+  .glossary dt{font-weight:700;font-family:"SF Mono",monospace;color:#cfe6ff;margin-top:11px}
+  .glossary dd{margin:2px 0 0;color:var(--mut)}
+  /* patch diffs (Ch7) */
+  pre.diff .add{color:#7ee787;background:rgba(46,160,67,.14);display:block;padding:0 4px}
+  pre.diff .rem{color:#ffa198;background:rgba(248,81,73,.14);display:block;padding:0 4px}
+  pre.diff .ctx{color:#8b97a5;display:block;padding:0 4px}
+  pre.diff .hunk{color:#79c0ff;display:block;padding:2px 4px;background:#101c2b}
+  /* Ch7 routing ladder */
+  .ladder{max-width:700px;margin:14px auto 4px}
+  .lrow{display:flex;gap:10px;align-items:stretch}
+  .lnode{flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 12px;background:#16202c;font-size:13px}
+  .lnode.dim{opacity:.5}
+  .lnode.q3{border-color:#1d456b;background:#0f2233}
+  .lnode.fb{border-color:#5a4a16;background:#241d09}
+  .lnode.floor{border-color:#3a4654;background:#101820;font-weight:600}
+  .lat{flex:0 0 252px;display:flex;align-items:center}
+  .latb{cursor:pointer;border:1px dashed #6b2742;background:#2b1622;color:#ffb3c6;border-radius:9px;
+    padding:5px 10px;font-size:12px;width:100%;transition:.12s;line-height:1.45}
+  .latb:hover{border-style:solid;border-color:var(--pink)}
+  .latb.on{border-style:solid;border-color:var(--pink);background:#3a1d2e;box-shadow:var(--shadow)}
+  .latb b{font-family:"SF Mono",ui-monospace,monospace}
+  .lcv{flex:1;text-align:center;font:600 10.5px/2 "SF Mono",ui-monospace,monospace;color:#46525f}
+  @media(max-width:760px){.lat{flex:0 0 160px}}
+  /* path chips (Ch7) */
+  .pchain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0;font:12px/1.8 "SF Mono",ui-monospace,monospace}
+  .pchain .pc{border:1px solid var(--line);border-radius:6px;padding:1px 8px;background:#16202c;color:#cdd9e5}
+  .pchain .pc.new{border-color:var(--pink);color:#ffb3c6;background:#2b1622;font-weight:700}
+  .pchain .pa{color:#46525f}
+  /* i18n */
+  .langbtn{position:fixed;top:14px;right:16px;z-index:50;background:var(--pill);color:#cfe6ff;
+    border:1px solid var(--acc);border-radius:8px;padding:6px 13px;font:600 13px/1 -apple-system,system-ui,sans-serif;
+    cursor:pointer;box-shadow:var(--shadow)}
+  .langbtn:hover{background:#243748}
+  html[data-lang="zh"] body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+</style>
+</head>
+<body>
+<button id="langToggle" class="langbtn" title="Switch language / 切換語言">繁中</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <h1>TorchInductor</h1>
+  <div class="sub">One idea, fully traced</div>
+  <a href="#intro">Preface · the one idea</a>
+  <a href="#bigpicture">1 · Where Inductor sits</a>
+  <a href="#walk">2 · One model, end to end</a>
+  <a href="#decide">3 · The decision: will it fuse?</a>
+  <a href="#fusion">4 · How fusion happens</a>
+  <a href="#program">5 · The generated program</a>
+  <a href="#shapes">6 · Dynamic shapes &amp; caching</a>
+  <a href="#extend">7 · Extending: plug in SKL</a>
+  <a href="#appendix">Appendix · catalogs &amp; glossary</a>
+  <a href="#colophon">Colophon · verify this book</a>
+</nav>
+
+<main>
+
+<!-- ================= PREFACE ================= -->
+<section id="intro">
+  <div class="ch">Preface</div>
+  <h2>The one idea</h2>
+  <p class="lead">When you run <b>torch.compile(model)</b>, PyTorch watches your model run once, writes the math
+  down as a graph, and hands it to <b>TorchInductor</b>, which turns it into fast machine code. Here is the
+  <b>single idea this whole book hangs on</b>: every operation in your model ends up as compiled code — the only
+  question is <b>who wrote that code, and when it was compiled</b>. Inductor writes some of it fresh, specialized
+  to your model (that's <i>fusion</i>, the speedup). The rest was written by humans years ago and shipped inside
+  PyTorch (that's <i>ATen</i>). Everything else in this book is detail on that one decision.</p>
+
+  <p>The three possible answers, color-coded — these colors mean the same thing on every diagram in this book:</p>
+  <table>
+    <tr><th></th><th>Who wrote the kernel</th><th>When compiled</th><th>You'll see it as</th></tr>
+    <tr><td><span class="badge b-fused">fused</span></td><td><b>Inductor</b>, for your exact model</td><td>just now, while compiling</td><td><code>cpp_fused_*(...)</code> / <code>triton_*</code></td></tr>
+    <tr><td><span class="badge b-ext">extern</span></td><td>a vendor library (oneDNN, BLAS, cuBLAS)</td><td>when the library was built</td><td><code>extern_kernels.*(...)</code></td></tr>
+    <tr><td><span class="badge b-aten">aten</span></td><td>PyTorch developers, by hand</td><td>when PyTorch was built</td><td><code>torch.ops.aten.*(...)</code></td></tr>
+  </table>
+
+  <div class="note">
+    <div class="t">How to read this book</div>
+    Chapter 2 walks <b>one real model</b> through the whole compiler. Chapter 3 is an <b>interactive decision
+    tree</b> — pick an op, watch it route. Chapter 5 is the centerpiece: a <b>live map of the generated
+    program</b> where clicking the real code highlights the path it takes, and vice versa. Anything behind a
+    <code>&#9654;</code> is detail-on-demand — open it when you want depth. Every claim carries a pill like
+    <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L1145">ir.py:1145</a>
+    linking to the exact source line, pinned to the commit this book was verified against. The code shown is
+    <b>real captured output</b> from an actual CPU build at that commit — not sketches.
+  </div>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 1 BIG PICTURE ================= -->
+<section id="bigpicture">
+  <div class="ch">Chapter 1</div>
+  <h2>Where Inductor sits</h2>
+  <p class="lead">Inductor is the <b>last stage</b> of <code>torch.compile</code>. Upstream (Dynamo + AOTAutograd)
+  has already flattened your Python into a clean list of tensor operations — an <b>ATen FX graph</b>. Inductor
+  reads that list and emits a small program: a few freshly-written kernels, plus calls to prebuilt ones, plus a
+  <i>wrapper</i> that runs them in order. Click each stage below.</p>
+
+  <div class="pipe" id="pipe"></div>
+  <div id="stageDetail"></div>
+
+  <details>
+    <summary>The same flow as a call chain, for reading the source</summary>
+    <div class="body">
+<pre><span class="f">compile_fx</span>                          <span class="c"># entry — compile_fx.py:2685</span>
+ └─ aot_autograd(...)              <span class="c"># hands fwd/bwd graphs back to Inductor</span>
+     ├─ compile_fx_forward         <span class="c"># 2424   (backward: 2558)</span>
+     └─ _compile_fx_inner          <span class="c"># 846 — cache lookup, then:</span>
+         ├─ _recursive_post_grad_passes      <span class="c"># 570</span>
+         ├─ GraphLowering(...).run(*inputs)  <span class="c"># lowering: FX -> IR</span>
+         ├─ graph.codegen()                  <span class="c"># scheduler + wrapper -> source</span>
+         └─ graph.compile_to_module()        <span class="c"># source -> callable</span></pre>
+      <p class="mut">Forward and backward are split by AOTAutograd's partitioner
+      (<code>partition_fn</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/compile_fx.py#L2273">compile_fx.py:2273</a>);
+      Inductor has no concept of "backward" — it just compiles whatever graph it's handed.</p>
+    </div>
+  </details>
+
+  <div class="note warn">
+    <div class="t">Map vs. territory</div>
+    Every diagram here is a teaching simplification of code that also handles caching, freezing, and cudagraphs.
+    When a box disagrees with the source behind its pill, the source wins — that is the point of the pills.
+  </div>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 2 WALKTHROUGH ================= -->
+<section id="walk">
+  <div class="ch">Chapter 2</div>
+  <h2>One model, end to end</h2>
+  <p class="lead">Let's compile the core of a transformer block — <b>LayerNorm &rarr; Linear &rarr; GELU &rarr;
+  Linear</b> — and watch <b>14 ATen operations collapse into 4 calls</b>: two kernels Inductor writes, two
+  library matmuls it doesn't. Every artifact below is real captured output (CPU build, commit
+  <code>0a327fa</code>).</p>
+
+<pre><span class="k">def</span> <span class="f">mlp_block</span>(x, gamma, beta, w1, b1, w2, b2):
+    h = F.<span class="f">layer_norm</span>(x, (x.shape[-1],), gamma, beta)
+    h = F.<span class="f">gelu</span>(h @ w1 + b1)
+    <span class="k">return</span> h @ w2 + b2          <span class="c"># x:[128,256]  w1:[256,1024]  w2:[1024,256]</span></pre>
+
+  <div class="steps">
+    <div class="step"><div class="num">1</div><div class="sbody">
+      <div class="h"><span class="badge b-step">decompose</span>14 primitive ops arrive</div>
+      <p><code>layer_norm</code> is already split into <code>var_mean + sub + add + rsqrt + 2&times;mul + add</code>
+      (7 ops), <code>gelu</code> into <code>2&times;mul + erf + add + mul</code> (5 ops), and each
+      <code>@ w + b</code> folded into one <code>addmm</code> (2 ops). Decompositions are chosen by
+      <code>select_decomp_table</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/decomposition.py#L972">decomposition.py:972</a>.</p>
+      <details><summary>The real post-grad graph (trimmed)</summary><div class="body">
+<pre>var_mean = aten.var_mean.correction(arg0_1, [1], correction=0, keepdim=True)
+sub  = aten.sub(arg0_1, mean);  add = aten.add(var, 1e-05);  rsqrt = aten.rsqrt(add)
+mul  = aten.mul(sub, rsqrt);  mul_1 = aten.mul(mul, gamma);  add_1 = aten.add(mul_1, beta)
+addmm_1 = aten.addmm.default(b1, add_1, w1)            <span class="c"># Linear 1</span>
+mul_2 = aten.mul(addmm_1, 0.5);  mul_3 = aten.mul(addmm_1, 0.70710678)
+erf  = aten.erf(mul_3);  add_3 = aten.add(erf, 1);  mul_4 = aten.mul(mul_2, add_3)
+addmm = aten.addmm.default(b2, mul_4, w2)              <span class="c"># Linear 2</span></pre>
+      </div></details>
+    </div></div>
+
+    <div class="step"><div class="num">2</div><div class="sbody">
+      <div class="h"><span class="badge b-step">lower</span>Each op becomes an IR node</div>
+      <p><code>GraphLowering.run_node</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/graph.py#L1829">graph.py:1829</a>
+      looks each op up in a dispatch table: <code>var_mean</code> &rarr; a <b>Reduction</b>; the elementwise chain
+      &rarr; lazy <b>Pointwise</b> nodes; each <code>addmm</code> &rarr; an <b>ExternKernel</b> (it will call a
+      library). Chapter 3 is this decision, interactive; Chapter 4 explains the node types.</p>
+    </div></div>
+
+    <div class="step"><div class="num">3</div><div class="sbody">
+      <div class="h"><span class="badge b-step">fuse</span>12 of the 14 ops merge into 2 kernels</div>
+      <p>The scheduler fuses everything that shares an iteration space: the 7 LayerNorm ops become
+      <code>cpp_fused_native_layer_norm_0</code>, the 5 GELU ops become <code>cpp_fused_gelu_1</code>. The two
+      <code>addmm</code>s are fusion barriers and stay separate. How fusion decides: Chapter 4.</p>
+    </div></div>
+
+    <div class="step"><div class="num">4</div><div class="sbody">
+      <div class="h"><span class="badge b-step">codegen</span>Inductor writes the two kernels</div>
+      <p>Each fused group becomes one C++/OpenMP kernel. The GELU one, real and nearly complete — five ops,
+      one in-place vectorized loop, <b>no intermediate tensors</b>:</p>
+<pre><span class="c">// cpp_fused_gelu_1 — real captured output (guard boilerplate elided)</span>
+<span class="k">extern</span> <span class="s">"C"</span> <span class="k">void</span> kernel(<span class="k">float</span>* in_out_ptr0) {
+    <span class="c">#pragma omp parallel num_threads(24)</span>
+    <span class="c">#pragma omp for</span>
+    <span class="k">for</span> (int64_t x0 = 0; x0 &lt; 131072; x0 += 8) {            <span class="c">// 128*1024, 8 floats/AVX vector</span>
+        <span class="k">auto</span> tmp0  = at::vec::Vectorized&lt;<span class="k">float</span>&gt;::loadu(in_out_ptr0 + x0, 8);
+        <span class="k">auto</span> tmp3  = tmp0 * Vec(0.5f);                       <span class="c">// 0.5x</span>
+        <span class="k">auto</span> tmp7  = (tmp0 * Vec(0.70710678f)).erf();        <span class="c">// erf(x/sqrt 2)</span>
+        <span class="k">auto</span> tmp11 = tmp3 * (tmp7 + Vec(1.0f));              <span class="c">// gelu(x)</span>
+        tmp11.store(in_out_ptr0 + x0);                       <span class="c">// in place</span>
+    }
+}</pre>
+      <details><summary>The LayerNorm kernel — three real loop passes (mean, variance, normalize)</summary><div class="body">
+<pre><span class="c">// cpp_fused_native_layer_norm_0 — real, trimmed to the load-bearing lines</span>
+<span class="c">#pragma omp for</span>   <span class="c">// pass 1: row sums -> mean</span>
+<span class="k">for</span> (x0 &lt; 128) { <span class="k">for</span> (x1 &lt; 256; x1+=8) tmp_acc0_vec += loadu(in_ptr0 + x1 + 256*x0);
+                 in_out_ptr0[x0] = vec_reduce_all(tmp_acc0_vec); }
+<span class="c">#pragma omp single</span>  <span class="c">// divide by 256 -> mean</span>
+<span class="c">#pragma omp for</span>   <span class="c">// pass 2: variance = sum((x-mean)^2)</span>
+<span class="k">for</span> (x0 &lt; 128) { tmp3 = loadu(...) - mean; tmp_acc0_vec += tmp3*tmp3; out_ptr1[x0] = ...; }
+<span class="c">#pragma omp for</span>   <span class="c">// pass 3: (x-mean) * rsqrt(var/256+1e-5) * gamma + beta -> out</span>
+<span class="k">for</span> (x0 &lt; 128) <span class="k">for</span> (x1 &lt; 256; x1+=8) { ...; tmp15.store(out_ptr2 + x1 + 256*x0); }</pre>
+        <p class="mut">Note what never exists: no buffer for <code>x-mean</code>, none for <code>(x-mean)&sup2;</code>,
+        no separate <code>*gamma</code> or <code>+beta</code> tensors — all in registers.</p>
+      </div></details>
+    </div></div>
+
+    <div class="step"><div class="num">5</div><div class="sbody">
+      <div class="h"><span class="badge b-step">wrap</span>A tiny program runs the four pieces</div>
+      <p>The wrapper — <code>call(args)</code> — allocates buffers and runs everything in dependency order.
+      This artifact is the subject of <a href="#program">Chapter 5</a>, where it becomes an interactive map.</p>
+<pre>    <span class="k">def</span> <span class="f">call</span>(self, args):                                       <span class="c"># real captured output</span>
+        ...
+        <span class="f">cpp_fused_native_layer_norm_0</span>(buf1, arg0_1, arg1_1, arg2_1, buf2, buf3)
+        extern_kernels.<span class="f">addmm</span>(arg4_1, buf3, arg3_1, alpha=1, beta=1, out=buf4)
+        <span class="f">cpp_fused_gelu_1</span>(buf5)
+        extern_kernels.<span class="f">addmm</span>(arg6_1, buf5, arg5_1, alpha=1, beta=1, out=buf6)
+        <span class="k">return</span> (buf6, )</pre>
+    </div></div>
+  </div>
+
+  <div class="note">
+    <div class="t">What you just watched</div>
+    14 ops &rarr; 4 calls. Inductor <b>wrote</b> 2 kernels (12 ops' worth of math, zero intermediate tensors) and
+    <b>delegated</b> 2 matmuls to a library it trusts to be faster. That split — write it or delegate it — is the
+    one idea from the preface, in action.
+  </div>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 3 DECISION ================= -->
+<section id="decide">
+  <div class="ch">Chapter 3</div>
+  <h2>The decision: will it fuse?</h2>
+  <p class="lead">For each op, Inductor asks three questions, in order. <b>Pick an op</b> and watch it route
+  through the tree — the verdict shows exactly what that op becomes in the final program.</p>
+
+  <div class="dtree">
+    <div class="dchips" id="dchips"></div>
+    <div id="dtreeBox"></div>
+    <div id="dverdict"></div>
+  </div>
+
+  <details>
+    <summary>Check any op yourself — the registries are the source of truth</summary>
+    <div class="body">
+      <p>The dispatch table is <code>lowerings</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/lowering.py#L124">lowering.py:124</a>
+      (filled by <code>@register_lowering</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/lowering.py#L534">lowering.py:534</a>);
+      fallbacks are tagged and tracked in <code>fallbacks</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/lowering.py#L129">lowering.py:129</a>.</p>
+<pre><span class="k">import</span> torch, torch._inductor.lowering <span class="k">as</span> L
+<span class="k">from</span> torch._inductor.decomposition <span class="k">import</span> decompositions
+<span class="k">def</span> <span class="f">classify</span>(op):
+    <span class="k">if</span> op <span class="k">in</span> decompositions <span class="k">or</span> op.overloadpacket <span class="k">in</span> decompositions: <span class="k">return</span> <span class="s">"DECOMPOSED"</span>
+    fn = L.lowerings.get(op) <span class="k">or</span> L.lowerings.get(op.overloadpacket)
+    <span class="k">if</span> fn <span class="k">is</span> <span class="k">None</span>: <span class="k">return</span> <span class="s">"NO LOWERING"</span>
+    <span class="k">if</span> getattr(fn, <span class="s">"_is_fallback_handler"</span>, <span class="k">False</span>): <span class="k">return</span> <span class="s">"FALLBACK -> aten"</span>
+    <span class="k">return</span> <span class="s">"LOWERED -> fused or extern"</span></pre>
+      <p>Most reliable check of all: read what was actually generated —
+      <code>TORCH_LOGS=output_code python your_script.py</code>.</p>
+      <div class="note warn" style="margin-top:10px">
+        <div class="t">A gotcha we found by running it</div>
+        <code>classify()</code> checks decompositions first, so ops with <b>conditional</b> decompositions
+        (<code>mm</code>, <code>add</code>) report <code>DECOMPOSED</code> even when the decomp doesn't fire.
+        On a real build, <code>relu(x @ w)</code> emitted <code>extern_kernels.mm</code> and
+        <code>(x+1).sum()</code> emitted one fused <code>cpp_fused_add_sum_0</code>. When the helper and
+        <code>output_code</code> disagree, trust <code>output_code</code>.
+      </div>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 4 FUSION ================= -->
+<section id="fusion">
+  <div class="ch">Chapter 4</div>
+  <h2>How fusion happens</h2>
+  <p class="lead">Why can Inductor weld 7 ops into one kernel? Because between the graph and the kernel, an op is
+  not code yet — it's a <b>recipe</b>: a function that says how to compute <i>one element</i>. Fusing two ops is
+  just composing their recipes. The art is keeping ops as recipes for as long as possible.</p>
+
+  <h3>Lazy recipes vs. materialized tensors</h3>
+  <p>A <code>Pointwise</code> node
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L1145">ir.py:1145</a>
+  stores no tensor — it stores <code>inner_fn(index)</code>, a Python function that, given loop indices, emits the
+  scalar steps for one output element (<code>ops.load</code>, <code>ops.add</code>, &hellip;). A
+  <code>Reduction</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L1309">ir.py:1309</a>
+  is the same with an accumulator. To fuse a producer into a consumer, Inductor literally passes the producer's
+  <code>inner_fn</code> as the consumer's loader — function composition, nothing more. Only when a value must
+  exist in memory does it become a <code>ComputedBuffer</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L5178">ir.py:5178</a>
+  — and fusion across that point is over.</p>
+
+  <h3>The scheduler's two checks</h3>
+  <p>The <code>Scheduler</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L4028">scheduler.py:4028</a>
+  repeatedly merges nodes (<code>fuse_nodes</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L4986">scheduler.py:4986</a>)
+  asking two things: is it <b>legal</b> — the consumer reads exactly what the producer wrote, at the same index
+  (<code>can_fuse_vertical</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L7669">scheduler.py:7669</a>),
+  and no dependency cycle is created
+  (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L6455">scheduler.py:6455</a>);
+  and is it <b>worth it</b> — scored by memory traffic saved
+  (<code>score_fusion_memory</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L8071">scheduler.py:8071</a>).
+  An <code>ExternKernel</code> wrapped as an <code>ExternKernelSchedulerNode</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L2138">scheduler.py:2138</a>
+  is opaque — nothing fuses <em>through</em> it. That's why the two <code>addmm</code>s in Chapter 2 bounded the
+  fusion regions.</p>
+
+  <details>
+    <summary>The smallest possible demonstration: <code>(x + 1).sum()</code> &rarr; one kernel</summary>
+    <div class="body">
+      <p>The Pointwise (<code>+1</code>) feeds the Reduction (<code>sum</code>) at the same indices — textbook
+      vertical fusion into one <code>FusedSchedulerNode</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L2616">scheduler.py:2616</a>.
+      Real captured kernel — the <code>+1</code> lives <em>inside</em> the reduction loop, and the 1024&times;1024
+      intermediate is never allocated:</p>
+<pre><span class="c">// cpp_fused_add_sum_0 — real output, trimmed</span>
+<span class="c">#pragma omp parallel num_threads(24)</span>
+<span class="c">#pragma omp for</span>
+<span class="k">for</span> (int64_t x0 = 0; x0 &lt; 1048576; x0 += 8) {
+    <span class="k">auto</span> tmp0 = at::vec::Vectorized&lt;<span class="k">float</span>&gt;::loadu(in_ptr0 + x0, 8);
+    <span class="k">auto</span> tmp3 = tmp0 + Vec(1.0f);                       <span class="c">// the +1, fused in</span>
+    tmp_acc0_vec = cascade_sum_combine(tmp3, &amp;helper);  <span class="c">// accumulate</span>
+}
+out_ptr0[0] = <span class="k">static_cast</span>&lt;<span class="k">float</span>&gt;(tmp_acc0);              <span class="c">// one scalar out</span></pre>
+      <p>And its whole wrapper: <b>one</b> allocation, <b>one</b> kernel call:</p>
+<pre>    buf0 = empty_strided_cpu((), (), torch.float32)
+    cpp_fused_add_sum_0(arg0_1, buf0)
+    <span class="k">return</span> (buf0, )</pre>
+    </div>
+  </details>
+
+  <details>
+    <summary>Reference: the IR node hierarchy and scheduler node zoo</summary>
+    <div class="body">
+      <table>
+        <tr><th>IR node</th><th>Means</th><th>Source</th></tr>
+        <tr><td><code>Loops</code> / <code>Pointwise</code> / <code>Reduction</code></td><td>lazy recipes (<code>inner_fn</code> + ranges) — fusible</td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L990">ir.py:990</a></td></tr>
+        <tr><td><code>Buffer</code> / <code>ComputedBuffer</code></td><td>materialized in memory; <code>ComputedBuffer</code> = recipe + layout</td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L4952">ir.py:4952</a></td></tr>
+        <tr><td><code>ExternKernel</code> / <code>FallbackKernel</code></td><td>calls out instead of lowering to loops; fusion barrier</td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L6591">ir.py:6591</a> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L8765">ir.py:8765</a></td></tr>
+        <tr><td><code>TensorBox</code> / <code>StorageBox</code></td><td>indirection so views share storage; <code>realize()</code> materializes</td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/ir.py#L9941">ir.py:9941</a></td></tr>
+      </table>
+      <table>
+        <tr><th>Scheduler node</th><th>Means</th><th>Source</th></tr>
+        <tr><td><code>SchedulerNode</code></td><td>one fusible op</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L2182">scheduler.py:2182</a></td></tr>
+        <tr><td><code>FusedSchedulerNode</code></td><td>several welded into one kernel</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L2616">scheduler.py:2616</a></td></tr>
+        <tr><td><code>ExternKernelSchedulerNode</code></td><td>opaque extern call — the barrier</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/scheduler.py#L2138">scheduler.py:2138</a></td></tr>
+      </table>
+      <p class="mut">Dependencies are tracked as indexed reads/writes (<code>MemoryDep</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/dependencies.py#L76">dependencies.py:76</a>)
+      in each node's <code>ReadWrites</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/dependencies.py#L432">dependencies.py:432</a>.</p>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 5 THE PROGRAM (BIG DIAGRAM) ================= -->
+<section id="program">
+  <div class="ch">Chapter 5</div>
+  <h2>The generated program — a live map</h2>
+  <p class="lead">This is what Inductor ultimately hands back: a function named <b><code>call(args)</code></b>
+  that allocates buffers and fires kernels. <b>Left:</b> the real captured wrapper from Chapter 2's model
+  (plus one extra line from another run, to show all three forms). <b>Right:</b> the map of where each kind of
+  call goes. <b>Click any call on the left, or any column on the right</b> — both light up, and the panel below
+  explains that path down to the machine code.</p>
+
+  <div class="big">
+    <div class="bigcode" id="bigCode">
+      <div class="cap">real captured call() — MLP block (CPU build @ 0a327fa)</div>
+    </div>
+    <div class="bigmap" id="bigMap"></div>
+  </div>
+  <div id="bigDetail"></div>
+
+  <p class="mut" style="text-align:center;font-size:12.5px">All three paths end in compiled C++ — the difference
+  is <b>who wrote it and when it was compiled</b>. Green: Inductor, just now, for your shapes. Blue and amber:
+  prebuilt — blue <em>won a race</em> to be there, amber <em>had no rival</em>.</p>
+
+  <h3>Where <code>call()</code> itself comes from</h3>
+  <p>The wrapper is assembled by <code>PythonWrapperCodegen</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/codegen/wrapper.py#L1257">wrapper.py:1257</a>:
+  the name <code>"call"</code> is fixed at
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/codegen/wrapper.py#L1378">wrapper.py:1378</a>,
+  each kernel call is queued during scheduling as a <code>KernelCallLine</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/codegen/wrapper.py#L701">wrapper.py:701</a>
+  (extern calls: <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/codegen/wrapper.py#L633">wrapper.py:633</a>),
+  and <code>generate()</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/codegen/wrapper.py#L2120">wrapper.py:2120</a>
+  renders the final source, which is compiled to a module whose <code>call</code> you invoke. For AOTInductor
+  deployment a C++ wrapper replaces the Python one
+  (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/codegen/cpp_wrapper_cpu.py#L254">cpp_wrapper_cpu.py:254</a>).</p>
+
+  <details>
+    <summary>What "hand-written" really means — the three layers behind an eager ATen kernel</summary>
+    <div class="body">
+      <p>Take the amber example, <code>aten._cdist_forward</code>. "The eager kernel" is three layers:</p>
+      <ul>
+        <li><b>The body (the math) — hand-written C++:</b> <code>native::_cdist_forward</code>
+          <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/native/Distance.cpp#L183">Distance.cpp:183</a>,
+          with <code>AT_DISPATCH_FLOATING_TYPES</code>
+          <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/native/cpu/DistanceOpsKernel.cpp#L431">DistanceOpsKernel.cpp:431</a>
+          stamping the same lambda per dtype, and <code>TensorIterator</code>/<code>Loops.h</code> supplying
+          iteration, broadcasting, and <code>at::vec</code> vectorization for simpler ops.</li>
+        <li><b>The plumbing — generated at PyTorch build time:</b> the op is declared in
+          <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/native/native_functions.yaml#L4441">native_functions.yaml:4441</a>
+          (yaml, not C++); <b>torchgen</b> generates the dispatcher registration, <code>at::</code> API, Python
+          bindings, and autograd glue.</li>
+        <li><b>Some bodies are just library calls</b> — eager <code>aten::mm</code> is essentially "call
+          BLAS/oneDNN," which is why blue and amber converge in spirit.</li>
+      </ul>
+      <p><b>And the piece that connects body to plumbing: <code>torch::CppFunction</code>.</b> It is the
+      registration <em>envelope</em>, not the kernel: <code>m.impl(...)</code> wraps your function into a
+      <code>CppFunction</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/library.h#L107">library.h:107</a>,
+      which holds a type-erased <code>c10::KernelFunction</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/library.h#L298">library.h:298</a>
+      plus the dispatch key
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/library.h#L297">library.h:297</a>
+      — the dispatcher's filing card. Proof it isn't "the hand-written kernel": the same envelope carries
+      torchgen's <em>generated</em> <code>wrapper_CPU_mm_out_out</code>, and
+      <code>CppFunction::makeFallthrough()</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/library.h#L229">library.h:229</a>
+      contains no kernel at all. One line: <b>the kernel is the letter, <code>CppFunction</code> is the envelope,
+      the dispatch table is the mailbox.</b></p>
+      <p>So PyTorch has <b>three code-writing moments</b>: humans (once, in the repo) write kernel bodies;
+      <b>torchgen</b> (at PyTorch build time) writes the plumbing; <b>Inductor</b> (at <code>torch.compile</code>
+      time) writes fused kernels. Eager PyTorch is already partly a code-generation system — Inductor moved
+      codegen from build time to compile time, and from the plumbing into the kernels themselves.</p>
+    </div>
+  </details>
+
+  <p class="mut">Want to plug your <em>own</em> library into this map (a new vendor backend)? That is
+  <a href="#extend">Chapter 7</a>.</p>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 6 SHAPES ================= -->
+<section id="shapes">
+  <div class="ch">Chapter 6</div>
+  <h2>Dynamic shapes &amp; caching</h2>
+  <p class="lead">One compile can serve many input sizes: Inductor keeps sizes <b>symbolic</b> (<code>s0</code>,
+  <code>s1</code>&hellip;) and inserts cheap <b>guards</b> — runtime checks that trigger a recompile when an
+  assumption breaks. And because compiling is expensive, everything is cached so the second run is instant.</p>
+  <p>Symbolic sizes are managed by <code>SizeVarAllocator</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/sizevars.py#L243">sizevars.py:243</a>
+  (<code>guard_int</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/sizevars.py#L957">sizevars.py:957</a>
+  pins a symbol to a concrete value when it must). The <b>FxGraphCache</b> short-circuits the whole pipeline on a
+  hit, at <code>_compile_fx_inner</code>
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/compile_fx.py#L846">compile_fx.py:846</a>;
+  below it, compiled kernels are cached on disk.</p>
+  <p class="mut">Data-dependent sizes (the count <code>nonzero</code> returns) can't be guarded — that's one
+  reason such ops live on the amber path in Chapter 5's map.</p>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 7 EXTEND (SKL) ================= -->
+<section id="extend">
+  <div class="ch">Chapter 7</div>
+  <h2>Extending the map: plugging in SKL (RISC-V)</h2>
+  <p class="lead">Suppose you have a vendor kernel library — <b>SKL</b> for RISC-V — and want compiled models to
+  use it. Nothing about Chapter 5's map changes; you choose <b>which node to plug into</b>. Because the blue and
+  amber paths both end in ATen, there are three attachment points — shown below on Chapter 3's routing ladder,
+  top to bottom. <b>The pink chips are the attachment points — click one</b> for the path it modifies and the
+  actual patch.</p>
+
+  <div id="sklMap"></div>
+
+  <h4>Priority — how the three relate</h4>
+  <ul>
+    <li><b>Same op, earlier rung wins.</b> <code>mm</code> resolves at Q3, so B's race fires and the amber rung
+      is never consulted — for ops it covers, B has priority over C.</li>
+    <li><b>A is orthogonal — it has no rung.</b> It sits below every branch and catches whatever arrives, blue
+      or amber, compiled or eager. "Priority" doesn't apply to the floor.</li>
+    <li><b>C as a graph rewrite (C&prime;) preempts everything.</b> Swapping <code>aten.mm &rarr;
+      torch.ops.skl.mm</code> happens <em>before</em> the tree runs, so Q3 never sees an <code>mm</code>.
+      Priority ultimately belongs to whoever edits the graph first.</li>
+    <li><b>Stacking A + B makes the race SKL vs SKL</b> — with A wired, <code>aten_mm</code> already lands in
+      SKL, so B only wins by wrapper overhead. Choose deliberately rather than stacking.</li>
+  </ul>
+
+  <div id="sklDetail"></div>
+
+  <h3>Which one, when</h3>
+  <table>
+    <tr><th>Approach</th><th>PyTorch changes</th><th>Competes or replaces?</th><th>Covers</th><th>Shows up in call() as</th></tr>
+    <tr><td><b>A</b> — below the dispatcher</td><td>none (build flag) or an out-of-tree override</td><td><b>replaces</b> the default</td><td>every op SKL implements, eager too</td><td>unchanged — <code>extern_kernels.*</code> / <code>torch.ops.aten.*</code></td></tr>
+    <tr><td><b>B</b> — new blue contestant</td><td>small <code>mm.py</code> patch + a custom op</td><td><b>competes</b> — autotuned per shape</td><td>each op you wire (GEMM family)</td><td><code>extern_kernels.skl_mm(...)</code></td></tr>
+    <tr><td><b>C</b> — new amber entry</td><td>none — out-of-tree op</td><td>neither — always taken where called</td><td>any op you call — <b>model code must change</b> (or a swap pass)</td><td><code>torch.ops.skl.mm(...)</code></td></tr>
+  </table>
+  <p>Rule of thumb: BLAS-compatible → start at <b>A</b> (one build flag; broadest reach). Want SKL to
+  <em>compete</em> per shape instead of replace → <b>B</b>. Prototyping or non-GEMM ops → <b>C</b>, then
+  graduate. The green path needs nothing — <code>cpp_fused_*</code> kernels compile with your RISC-V toolchain
+  regardless (vector quality depends on <code>at::vec</code> RVV support).</p>
+
+  <div class="note warn">
+    <div class="t">What's real in these patches, and what isn't</div>
+    The <span style="color:var(--grn)">green +</span> lines are the integration <em>you would write</em> — SKL is
+    hypothetical here (its API was not verified, and nothing was tested on RISC-V). Everything else is real at
+    the pinned commit: every context line, every pill, and the mechanisms the patches lean on
+    (<code>BLAS=Generic</code>, <code>ExternKernelChoice</code>, <code>implicit_fallbacks</code>). Exceptions:
+    approaches <b>C, A2, and B were all executed live on this build</b> with stand-in kernel bodies — C produced
+    the <code>call()</code> on its card; A2's override was compiled, loaded, and verified via
+    <code>_dispatch_dump</code>; B's patch was applied (then reverted), raced, and emitted
+    <code>extern_kernels.skl_mm</code> — each card carries its captured output. Only A1 (the BLAS rebuild)
+    remains unapplied.
+  </div>
+</section>
+
+<hr class="hr">
+
+<!-- ================= APPENDIX ================= -->
+<section id="appendix">
+  <div class="ch">Appendix</div>
+  <h2>Catalogs &amp; glossary</h2>
+  <p class="mut">Reference material — deliberately out of the main flow.</p>
+
+  <details>
+    <summary>The full <code>extern_kernels.*</code> menu (23 on this build) — the blue path's roster</summary>
+    <div class="body">
+      <p>Every name is registered by an <code>ExternKernelChoice</code> via <code>setattr</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/select_algorithm.py#L3101">select_algorithm.py:3101</a>.
+      Triton/CUTLASS are separate templates — never <code>extern_kernels.*</code>.</p>
+      <table>
+        <tr><th>Family</th><th>Names</th><th>Source</th></tr>
+        <tr><td>Dense matmul</td><td><code>mm</code>, <code>mm_dtype</code>, <code>addmm</code>, <code>bias_addmm</code>, <code>_mm_plus_mm</code></td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/kernel/mm.py#L139">mm.py:139</a></td></tr>
+        <tr><td>Batched / grouped</td><td><code>bmm</code>, <code>bmm_dtype</code>, <code>baddbmm</code>, <code>_grouped_mm</code>, <code>_scaled_grouped_mm</code></td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/kernel/bmm.py#L67">bmm.py:67</a></td></tr>
+        <tr><td>FP8 / int / sparse</td><td><code>_scaled_mm</code>, <code>_int_mm</code>, <code>_weight_int8pack_mm</code>, <code>int4mm_packed_weight_cpu</code>, <code>_sparse_semi_structured_mm</code></td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/kernel/mm.py#L151">mm.py:151</a></td></tr>
+        <tr><td>Convolution</td><td><code>convolution</code>, <code>conv1x1_via_mm</code>, <code>call_aten_dw</code>, <code>call_aten_dx</code></td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/kernel/conv.py#L350">conv.py:350</a></td></tr>
+        <tr><td>oneDNN fused linear</td><td><code>_linear_pointwise</code>(+<code>.binary</code>), <code>qlinear_pointwise</code>(+<code>.binary</code>)</td>
+          <td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/mkldnn_lowerings.py#L242">mkldnn_lowerings.py:242</a></td></tr>
+      </table>
+      <p class="mut">Regenerate: <code>sorted(n for n in dir(extern_kernels) if not n.startswith("__"))</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>The full <code>torch.ops.aten.*</code> fallback menu (357 overloads, ~130 ops) — the amber path's roster</summary>
+    <div class="body">
+      <p>All registered by <code>make_fallback</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/lowering.py#L2728">lowering.py:2728</a>,
+      tracked in <code>fallbacks</code>
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/_inductor/lowering.py#L129">lowering.py:129</a>.</p>
+      <table>
+        <tr><th>Family</th><th>Examples</th><th>Why ATen</th></tr>
+        <tr><td>Linear algebra (52)</td><td><code>_linalg_svd</code>, <code>linalg_qr</code>, <code>cholesky_*</code>, <code>triangular_solve</code></td><td>LAPACK/cuSOLVER kernels</td></tr>
+        <tr><td>Attention (17)</td><td><code>_scaled_dot_product_*</code>, <code>_flash_attention_*</code></td><td>fused library kernels</td></tr>
+        <tr><td>Random (42)</td><td><code>rand*</code>, <code>randperm</code>, <code>multinomial</code></td><td>stateful RNG</td></tr>
+        <tr><td>Data-dependent shape (19)</td><td><code>nonzero</code>, <code>unique*</code>, <code>bincount</code>, <code>histc</code></td><td>output size unknown until runtime</td></tr>
+        <tr><td>Backward of pooling/upsample (26)</td><td><code>max_pool3d_*_backward</code>, <code>upsample_*_backward</code></td><td>complex backward kernels</td></tr>
+        <tr><td>Special functions (~120)</td><td><code>special_*</code> (Bessel, polynomials, zeta&hellip;)</td><td>rare math, bulk-registered</td></tr>
+        <tr><td>FFT, RNN, sparse, distance, misc</td><td><code>_fft_r2c</code>, <code>_cudnn_rnn</code>, <code>to_sparse</code>, <code>_cdist_forward</code>, <code>convolution_backward</code></td><td>no loop-level lowering</td></tr>
+      </table>
+      <p class="mut">Count is inflated by per-overload entries. Regenerate:
+      <code>sorted(str(op) for op in torch._inductor.lowering.fallbacks)</code>.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Glossary</summary>
+    <div class="body"><dl class="glossary" id="glossaryList"></dl></div>
+  </details>
+</section>
+
+<!-- ================= COLOPHON ================= -->
+<section id="colophon">
+  <div class="ch">Reference</div>
+  <h2>Colophon &amp; how to verify this book</h2>
+  <p>Pinned to commit <code>0a327fa9ec5</code> of <a target="_blank" href="https://github.com/pytorch/pytorch">pytorch/pytorch</a>.
+  Every pill is a permalink at that commit; line numbers drift, so on newer checkouts search for the named
+  symbol instead. All generated code shown is <b>real captured output</b> from a CPU-only build at this commit
+  (<code>USE_CUDA=0</code>; oneDNN v3.12.0, <code>USE_MKL=OFF</code>, Eigen BLAS — confirm with
+  <code>torch.__config__.show()</code>), dumped via <code>TORCH_LOGS=output_code</code>. GPU/Triton kernels were
+  <em>not</em> captured on this build; Triton claims are anchored to source only.</p>
+  <h4>Reproduce the artifacts</h4>
+<pre><span class="c"># the MLP walkthrough + kernels (Ch 2, 5)</span>
+TORCH_LOGS=<span class="s">"post_grad_graphs,output_code"</span> python agent_space/e2e.py
+<span class="c"># the minimal fused kernel (Ch 4)</span>
+TORCH_LOGS=output_code python -c <span class="s">"import torch; torch.compile(lambda x:(x+1).sum())(torch.randn(1024,1024))"</span>
+<span class="c"># the decision registries (Ch 3)</span>
+python -c <span class="s">"import torch._inductor.lowering as L; print(len(L.fallbacks))"</span></pre>
+  <p class="mut">If anything disagrees with what these commands show, the source wins — that's the point of
+  anchoring every claim.</p>
+</section>
+
+</main>
+</div>
+
+<footer>TorchInductor — one idea, fully traced · pytorch@0a327fa9ec5 · every claim anchored; verify, don't trust.</footer>
+
+<script>
+const SHA="0a327fa9ec53035748b747c16c6f97a6bdae764a";
+const GH="https://github.com/pytorch/pytorch/blob/"+SHA+"/";
+const pill=(p,l)=>`<a class="src" target="_blank" href="${GH}${p}#L${l}">${p.split("/").pop()}:${l}</a>`;
+/* i18n helpers */
+const isZh=()=>document.documentElement.dataset.lang==="zh";
+const pk=(o,k)=>(isZh()&&o[k+"_zh"]!=null)?o[k+"_zh"]:o[k];
+let curStage=0,curOp=null,curForm="fused";
+
+/* ---------- Ch1 pipeline ---------- */
+const STAGES=[
+ {t:"Capture + decompose",t_zh:"擷取 + 分解",d:"Python → ATen FX graph",d_zh:"Python → ATen FX 圖",path:"torch/_inductor/compile_fx.py",line:2685,
+  body:`Dynamo traces your Python; AOTAutograd functionalizes it and applies <b>decompositions</b> (big ops → primitives, table chosen at ${pill("torch/_inductor/decomposition.py",972)}). Inductor's front door is <code>compile_fx</code>.`,
+  body_zh:`Dynamo 追蹤你的 Python；AOTAutograd 將其函式化並套用<b>分解</b>（大運算 → 基本運算，分解表在 ${pill("torch/_inductor/decomposition.py",972)} 選定）。Inductor 的大門是 <code>compile_fx</code>。`},
+ {t:"Lower",t_zh:"降階",d:"FX node → IR recipe",d_zh:"FX 節點 → IR 食譜",path:"torch/_inductor/graph.py",line:1829,
+  body:`<code>GraphLowering</code> interprets the graph; each op looks up its lowering and becomes an IR node — a lazy <b>recipe</b> (Pointwise/Reduction) or an extern call. This is Chapter 3's decision.`,
+  body_zh:`<code>GraphLowering</code> 解譯這張圖；每個運算查出自己的 lowering，變成一個 IR 節點——延遲的<b>食譜</b>（Pointwise/Reduction）或一個 extern 呼叫。這就是第 3 章的決策。`},
+ {t:"Schedule + fuse",t_zh:"排程 + 融合",d:"recipes merge into kernels",d_zh:"食譜合併成 kernel",path:"torch/_inductor/scheduler.py",line:4028,
+  body:`The Scheduler computes dependencies and fuses recipes that share an iteration space — legality + profit checks (Chapter 4). Most of the speedup is born here.`,
+  body_zh:`Scheduler 計算相依關係，並把共用迭代空間的食譜融合——合法性 + 划算與否的檢查（第 4 章）。大部分加速誕生於此。`},
+ {t:"Codegen",t_zh:"產生程式碼",d:"kernels + wrapper, as text",d_zh:"kernel + wrapper，以文字形式",path:"torch/_inductor/codegen/wrapper.py",line:2120,
+  body:`Each fused group is printed as a C++/OpenMP (or Triton) kernel; a <b>wrapper</b> program is printed that allocates buffers and calls everything in order — Chapter 5's map.`,
+  body_zh:`每個融合群組被印成一個 C++/OpenMP（或 Triton）kernel；再印出一支 <b>wrapper</b> 程式，配置 buffer 並依序呼叫一切——即第 5 章的地圖。`},
+ {t:"Compile + cache",t_zh:"編譯 + 快取",d:"text → callable",d_zh:"文字 → 可呼叫物件",path:"torch/_inductor/compile_fx.py",line:846,
+  body:`The generated source is compiled (g++ / Triton JIT), loaded, and cached on disk; cache hits at <code>_compile_fx_inner</code> skip the whole pipeline next time.`,
+  body_zh:`產生的原始碼被編譯（g++ / Triton JIT）、載入並快取到磁碟；下次在 <code>_compile_fx_inner</code> 命中快取就跳過整條管線。`},
+];
+const pipeEl=document.getElementById("pipe"),sdEl=document.getElementById("stageDetail");
+function renderPipe(){pipeEl.innerHTML="";
+ STAGES.forEach((s,i)=>{const d=document.createElement("div");d.className="stage"+(i===curStage?" sel":"");
+  d.innerHTML=`<div class="st">${i+1}. ${pk(s,"t")}</div><div class="sd">${pk(s,"d")}</div>`;
+  d.onclick=()=>selStage(i);pipeEl.appendChild(d);});}
+function selStage(i){curStage=i;
+ document.querySelectorAll(".stage").forEach((e,j)=>e.classList.toggle("sel",j===i));
+ const s=STAGES[i];sdEl.innerHTML=`<div class="hd"><span class="ttl">${i+1} · ${pk(s,"t")}</span>${pill(s.path,s.line)}</div><div class="bd">${pk(s,"body")}</div>`;}
+renderPipe();selStage(0);
+
+/* ---------- Ch3 decision tree ---------- */
+const QS=[
+ {ql:"Q1 — does a decomposition fire?",ql_zh:"Q1 — 分解（decomposition）會觸發嗎？",qs:"decomposition.py table, applied before Inductor",qs_zh:"decomposition.py 的表，在 Inductor 之前套用",sp:"torch/_inductor/decomposition.py",sl:972,
+  out:{cls:"o-dec",txt:`<span class="badge b-dec">decomposed</span> rewritten into primitives — the <em>pieces</em> re-enter this tree`,
+   txt_zh:`<span class="badge b-dec">decomposed</span> 被改寫成基本運算——這些<em>片段</em>重新進入這棵樹`}},
+ {ql:"Q2 — is there a loop-level lowering?",ql_zh:"Q2 — 有迴圈層級的 lowering 嗎？",qs:"pointwise / reduction in the lowerings dict",qs_zh:"lowerings 字典中的 pointwise / reduction",sp:"torch/_inductor/lowering.py",sl:124,
+  out:{cls:"o-fused",txt:`<span class="badge b-fused">fused</span> becomes a lazy recipe → fused kernel → <code>cpp_fused_*</code>`,
+   txt_zh:`<span class="badge b-fused">fused</span> 變成延遲食譜 → 融合 kernel → <code>cpp_fused_*</code>`}},
+ {ql:"Q3 — is there an extern/template lowering?",ql_zh:"Q3 — 有 extern／樣板 lowering 嗎？",qs:"tuned_mm-style: autotune ATen vs Triton/CUTLASS",qs_zh:"tuned_mm 式：ATen 對 Triton/CUTLASS 自動調校",sp:"torch/_inductor/kernel/mm.py",sl:313,
+  out:{cls:"o-ext",txt:`<span class="badge b-ext">extern</span> a <em>race</em> decides — library call <code>extern_kernels.*</code> or a generated template`,
+   txt_zh:`<span class="badge b-ext">extern</span> 由一場<em>比賽</em>決定——函式庫呼叫 <code>extern_kernels.*</code> 或產生的樣板`}},
+ {ql:"otherwise: make_fallback",ql_zh:"否則：make_fallback",qs:"no decomp, no lowering, no template",qs_zh:"沒有分解、沒有 lowering、沒有樣板",sp:"torch/_inductor/lowering.py",sl:2728,
+  out:{cls:"o-aten",txt:`<span class="badge b-aten">aten</span> eager kernel — <code>torch.ops.aten.*</code>, a fusion barrier`,
+   txt_zh:`<span class="badge b-aten">aten</span> eager kernel——<code>torch.ops.aten.*</code>，融合屏障`}},
+];
+const DOPS=[
+ {n:"relu",route:[false,true],bucket:"fused",pillp:"torch/_inductor/lowering.py",pilll:7970,
+  v:`<b>relu → fused.</b> No decomposition; a pointwise lowering exists → lazy recipe → welded into a kernel. In a real run it appeared as <code>cpp_fused_relu_0</code> (and as the epilogue inside <code>cpp_fused_gelu_1</code>-style fusions).`,
+  v_zh:`<b>relu → 融合。</b>沒有分解；存在 pointwise lowering → 延遲食譜 → 焊進 kernel。真實執行中它以 <code>cpp_fused_relu_0</code> 出現（也作為各種融合的尾段）。`},
+ {n:"sum",route:[false,true],bucket:"fused",pillp:"torch/_inductor/lowering.py",pilll:7470,
+  v:`<b>sum → fused.</b> Reduction lowering → recipe with an accumulator. Producers fuse straight into its loop: <code>(x+1).sum()</code> became one <code>cpp_fused_add_sum_0</code>.`,
+  v_zh:`<b>sum → 融合。</b>Reduction lowering → 帶累加器的食譜。生產者直接融進它的迴圈：<code>(x+1).sum()</code> 變成一個 <code>cpp_fused_add_sum_0</code>。`},
+ {n:"add",route:[false,true],bucket:"fused",pillp:"torch/_inductor/lowering.py",pilll:7692,
+  v:`<b>add → fused</b> (in practice). It <em>has</em> a conditional decomposition for degenerate shapes, but normally the pointwise lowering wins → fused. Verified: <code>cpp_fused_add_sum_0</code>.`,
+  v_zh:`<b>add → 融合</b>（實務上）。它<em>有</em>針對退化形狀的條件式分解，但通常由 pointwise lowering 勝出 → 融合。已驗證：<code>cpp_fused_add_sum_0</code>。`},
+ {n:"silu",route:[true],bucket:"dec",pillp:"torch/_inductor/decomposition.py",pilll:250,
+  v:`<b>silu → decomposed</b> into <code>x * sigmoid(x)</code>; both pieces are pointwise and fuse.`,
+  v_zh:`<b>silu → 分解</b>成 <code>x * sigmoid(x)</code>；兩個片段都是 pointwise，會融合。`},
+ {n:"layer_norm",route:[true],bucket:"dec",pillp:"torch/_inductor/decomposition.py",pilll:209,
+  v:`<b>layer_norm → decomposed</b> into var_mean + normalize (7 primitive ops) — which then fused into <em>one</em> kernel in Chapter 2.`,
+  v_zh:`<b>layer_norm → 分解</b>成 var_mean + 正規化（7 個基本運算）——在第 2 章中它們隨後融合成<em>一個</em> kernel。`},
+ {n:"softmax",route:[true],bucket:"dec",pillp:"torch/_inductor/decomposition.py",pilll:96,
+  v:`<b>softmax → decomposed</b> into max / exp / sum / div; the pieces fuse.`,
+  v_zh:`<b>softmax → 分解</b>成 max / exp / sum / div；各片段會融合。`},
+ {n:"mm",route:[false,false,true],bucket:"ext",pillp:"torch/_inductor/kernel/mm.py",pilll:313,
+  v:`<b>mm → extern (usually).</b> <code>tuned_mm</code> races ATen vs Triton/CUTLASS templates; on this CPU build ATen won → <code>extern_kernels.mm</code>. If a template wins, mm becomes a <em>generated</em> kernel instead. Full story: Chapter 5's blue card.`,
+  v_zh:`<b>mm → extern（通常）。</b><code>tuned_mm</code> 讓 ATen 與 Triton/CUTLASS 樣板比賽；在這個 CPU build 上 ATen 勝出 → <code>extern_kernels.mm</code>。若樣板勝出，mm 會改為<em>產生的</em> kernel。完整故事見第 5 章藍色卡片。`},
+ {n:"addmm",route:[false,false,true],bucket:"ext",pillp:"torch/_inductor/kernel/mm.py",pilll:610,
+  v:`<b>addmm → extern (usually).</b> Same autotuned race as mm. Chapter 2's two Linears both emitted <code>extern_kernels.addmm</code>.`,
+  v_zh:`<b>addmm → extern（通常）。</b>與 mm 同樣的自動調校比賽。第 2 章的兩個 Linear 都產生了 <code>extern_kernels.addmm</code>。`},
+ {n:"convolution",route:[false,false,true],bucket:"ext",pillp:"torch/_inductor/kernel/conv.py",pilll:449,
+  v:`<b>convolution → extern (usually).</b> oneDNN convolution, or a conv template if it wins the race.`,
+  v_zh:`<b>convolution → extern（通常）。</b>oneDNN 卷積；若卷積樣板贏得比賽則改用樣板。`},
+ {n:"nonzero",route:[false,false,false,true],bucket:"aten",pillp:"torch/_inductor/lowering.py",pilll:3651,
+  v:`<b>nonzero → aten.</b> Its output <em>size depends on the data</em> — no loop lowering can exist. <code>make_fallback</code> → direct <code>torch.ops.aten.nonzero.default(...)</code>.`,
+  v_zh:`<b>nonzero → aten。</b>輸出<em>大小依資料而定</em>——不可能有迴圈 lowering。<code>make_fallback</code> → 直接呼叫 <code>torch.ops.aten.nonzero.default(...)</code>。`},
+ {n:"_linalg_svd",route:[false,false,false,true],bucket:"aten",pillp:"torch/_inductor/lowering.py",pilll:3637,
+  v:`<b>svd → aten.</b> LAPACK-class numerics; falls back to the eager kernel.`,
+  v_zh:`<b>svd → aten。</b>LAPACK 級的數值運算；回退到 eager kernel。`},
+ {n:"cdist",route:[false,false,false,true],bucket:"aten",pillp:"torch/_inductor/lowering.py",pilll:3554,
+  v:`<b>cdist → aten.</b> Verified live: <code>relu(cdist(a,b))</code> emitted <code>torch.ops.aten._cdist_forward.default(...)</code> — with the relu still fusing around it.`,
+  v_zh:`<b>cdist → aten。</b>實測驗證：<code>relu(cdist(a,b))</code> 產生了 <code>torch.ops.aten._cdist_forward.default(...)</code>——relu 仍在它周圍融合。`},
+];
+const chipsEl=document.getElementById("dchips"),treeEl=document.getElementById("dtreeBox"),verEl=document.getElementById("dverdict");
+DOPS.forEach((o,i)=>{const c=document.createElement("span");c.className="dchip";c.textContent="aten."+o.n;
+ c.onclick=()=>selOp(i);chipsEl.appendChild(c);});
+function renderTree(route){
+ let h="";
+ QS.forEach((q,qi)=>{
+   const visited=route!==null&&qi<route.length;
+   const yes=visited&&route[qi]===true;
+   h+=`<div class="drow">
+     <div class="dq ${visited?"lit":""}"><div class="ql">${pk(q,"ql")}</div><div class="qs">${pk(q,"qs")}</div><div style="margin-top:4px">${pill(q.sp,q.sl)}</div></div>
+     <div class="dyes"><div class="dout ${q.out.cls} ${yes?"lit":""}">${pk(q.out,"txt")}</div></div>
+   </div>`;
+   if(qi<QS.length-1)h+=`<div class="dconn ${visited&&route[qi]===false?"lit":""}"><div class="vl"></div><div class="lbl">${isZh()?"否":"no"} &darr;</div><div class="vl"></div></div>`;
+ });
+ treeEl.innerHTML=h;
+}
+function dverdictDefault(){
+ verEl.innerHTML=isZh()
+  ?`<span class="mut">在上方挑一個運算。樹會為它選路：被分解的運算以片段重新進入；有迴圈 lowering 的會融合；extern lowering 進行比賽；其餘全部回退到 eager ATen。</span>`
+  :`<span class="mut">Pick an op above. The tree routes it: decomposed ops re-enter as pieces; loop lowerings fuse; extern lowerings race; everything else falls back to eager ATen.</span>`;
+}
+function selOp(i){
+ curOp=i;
+ document.querySelectorAll(".dchip").forEach((e,j)=>e.classList.toggle("on",j===i));
+ const o=DOPS[i];renderTree(o.route);
+ verEl.innerHTML=`${pk(o,"v")} &nbsp;${pill(o.pillp,o.pilll)}`;
+}
+renderTree(null);
+dverdictDefault();
+
+/* ---------- Ch5 big map ---------- */
+const FORM={fused:{cap:"fused",cap_zh:"fused",cls:"fused",
+   nodes:[`<code>cpp_fused_&lt;ops&gt;_N(...)</code>`,`generated C++/OpenMP kernel<br>(GPU: <code>triton_*.run</code>)`,`Inductor wrote it — JIT-compiled<br>now, specialized to your shapes`],
+   nodes_zh:[`<code>cpp_fused_&lt;ops&gt;_N(...)</code>`,`產生的 C++/OpenMP kernel<br>（GPU：<code>triton_*.run</code>）`,`由 Inductor 寫成——現在才 JIT 編譯，<br>針對你的形狀特化`]},
+ ext:{cap:"extern",cap_zh:"extern",cls:"ext",
+   nodes:[`<code>extern_kernels.&lt;name&gt;(...)</code>`,`curated ATen op —<br>won the autotuning race`,`<code>torch.mm</code> → <code>aten::mm</code> → dispatcher`,`library: oneDNN / BLAS / cuBLAS`],
+   nodes_zh:[`<code>extern_kernels.&lt;name&gt;(...)</code>`,`精選的 ATen 運算——<br>贏得自動調校比賽`,`<code>torch.mm</code> → <code>aten::mm</code> → dispatcher`,`函式庫：oneDNN / BLAS / cuBLAS`]},
+ aten:{cap:"aten",cap_zh:"aten",cls:"aten",
+   nodes:[`<code>torch.ops.aten.&lt;op&gt;.&lt;ovl&gt;(...)</code>`,`make_fallback — no loop<br>lowering, no rival`,`dispatcher → precompiled C++<br>inside libtorch (built with PyTorch)`],
+   nodes_zh:[`<code>torch.ops.aten.&lt;op&gt;.&lt;ovl&gt;(...)</code>`,`make_fallback——沒有迴圈<br>降階、也沒有對手`,`dispatcher → libtorch 內預編譯的 C++<br>（隨 PyTorch 一起建置）`]}};
+const CODE=[
+ {t:"def call(self, args):",form:null},
+ {t:"    arg0_1, ..., arg6_1 = args",form:null},
+ {t:"    buf3 = empty_strided_cpu((128, 256), (256, 1), torch.float32)",form:null},
+ {t:"    cpp_fused_native_layer_norm_0(buf1, arg0_1, arg1_1, arg2_1, buf2, buf3)",form:"fused"},
+ {t:"    buf4 = empty_strided_cpu((128, 1024), (1024, 1), torch.float32)",form:null},
+ {t:"    extern_kernels.addmm(arg4_1, buf3, arg3_1, alpha=1, beta=1, out=buf4)",form:"ext"},
+ {t:"    buf5 = buf4; del buf4  # reuse",form:null},
+ {t:"    cpp_fused_gelu_1(buf5)",form:"fused"},
+ {t:"    extern_kernels.addmm(arg6_1, buf5, arg5_1, alpha=1, beta=1, out=buf6)",form:"ext"},
+ {t:"    return (buf6, )",form:null},
+ {t:"",form:null},
+ {t:"# from another run — relu(cdist(a, b)) — the third form:",form:null},
+ {t:"    buf0 = torch.ops.aten._cdist_forward.default(arg0_1, arg1_1, 2.0, None)",form:"aten"},
+];
+const DETAIL={
+fused:{title:`<span class="badge b-fused">fused</span> Inductor-generated kernels`,body:`
+ <p><b>What it is:</b> a kernel Inductor <em>wrote for this model</em> — many ops welded into one loop, then
+ JIT-compiled (g++ here; Triton on GPU). The kernel's name lists what it fused:
+ <code>cpp_fused_native_layer_norm_0</code> = 7 ops, one kernel.</p>
+ <div class="who"><div><div class="wt">who wrote it</div><b>Inductor</b> (codegen via <code>CppKernel</code> ${pill("torch/_inductor/codegen/cpp.py",1983)})</div>
+ <div><div class="wt">when compiled</div><b>just now</b> — at <code>torch.compile</code> time</div>
+ <div><div class="wt">specialized?</div><b>yes</b> — to your shapes, dtypes, fusion pattern</div></div>
+ <p><b>Real kernel</b> (GELU, condensed — five ops, zero intermediate tensors):</p>
+ <pre>#pragma omp parallel num_threads(24)
+#pragma omp for
+for (int64_t x0 = 0; x0 &lt; 131072; x0 += 8) {
+    auto tmp0  = at::vec::Vectorized&lt;float&gt;::loadu(in_out_ptr0 + x0, 8);
+    auto tmp11 = (tmp0*Vec(0.5f)) * ((tmp0*Vec(0.70710678f)).erf() + Vec(1.0f));
+    tmp11.store(in_out_ptr0 + x0);
+}</pre>
+ <p class="mut">Scalar ops are turned into C++ by <code>CppOverrides</code> ${pill("torch/_inductor/codegen/cpp.py",607)}
+ (Triton: <code>TritonOverrides</code> ${pill("torch/_inductor/codegen/triton.py",1269)}); the same recipe replays
+ against either backend.</p>`,
+ title_zh:`<span class="badge b-fused">fused</span> Inductor 產生的 kernel`,body_zh:`
+ <p><b>它是什麼：</b>Inductor <em>為這個模型而寫</em>的 kernel——許多運算焊進一個迴圈，然後 JIT 編譯（這裡用 g++；GPU 上用
+ Triton）。kernel 的名字列出它融合了什麼：<code>cpp_fused_native_layer_norm_0</code> = 7 個運算、一個 kernel。</p>
+ <div class="who"><div><div class="wt">由誰寫成</div><b>Inductor</b>（經 <code>CppKernel</code> ${pill("torch/_inductor/codegen/cpp.py",1983)} 產生）</div>
+ <div><div class="wt">何時編譯</div><b>就在剛才</b>——<code>torch.compile</code> 時</div>
+ <div><div class="wt">是否特化？</div><b>是</b>——針對你的形狀、dtype、融合樣式</div></div>
+ <p><b>真實 kernel</b>（GELU，濃縮——五個運算、零中間張量）：</p>
+ <pre>#pragma omp parallel num_threads(24)
+#pragma omp for
+for (int64_t x0 = 0; x0 &lt; 131072; x0 += 8) {
+    auto tmp0  = at::vec::Vectorized&lt;float&gt;::loadu(in_out_ptr0 + x0, 8);
+    auto tmp11 = (tmp0*Vec(0.5f)) * ((tmp0*Vec(0.70710678f)).erf() + Vec(1.0f));
+    tmp11.store(in_out_ptr0 + x0);
+}</pre>
+ <p class="mut">純量運算由 <code>CppOverrides</code> ${pill("torch/_inductor/codegen/cpp.py",607)} 轉成 C++
+ （Triton：<code>TritonOverrides</code> ${pill("torch/_inductor/codegen/triton.py",1269)}）；同一份食譜可對任一後端重播。</p>`},
+ext:{title:`<span class="badge b-ext">extern</span> the library call that won a race`,body:`
+ <p><b>What it is:</b> a curated ATen op — <code>extern_kernels.mm</code> literally <em>is</em>
+ <code>torch.mm</code> (${pill("torch/_inductor/kernel/mm.py",139)}). It is here because it <b>won a timed
+ race</b>: <code>tuned_mm</code> ${pill("torch/_inductor/kernel/mm.py",313)} builds the contestants with plain
+ if-else gates, then a stopwatch picks the winner:</p>
+ <pre>best_choice = min(timings, key=timings.__getitem__)   # lowest measured latency wins</pre>
+ <p>${pill("torch/_inductor/select_algorithm.py",4072)} — an experiment, not a heuristic. With one contestant
+ (the default: only ATen) there is nothing to time, so <code>mm → extern_kernels.mm</code> deterministically.</p>
+ <div class="who"><div><div class="wt">who wrote it</div><b>a vendor library</b> — oneDNN / BLAS / cuBLAS, via ATen</div>
+ <div><div class="wt">when compiled</div>when the <b>library</b> was built</div>
+ <div><div class="wt">could it have been generated?</div><b>yes</b> — if a Triton/CUTLASS template had won, mm would be a green-path kernel instead</div></div>
+ <p><b>On this build, concretely:</b> oneDNN v3.12.0 (<code>USE_MKLDNN=ON</code>), Eigen as plain-BLAS fallback
+ (<code>USE_MKL=OFF</code>), no cuBLAS (<code>USE_CUDA=0</code>) — from <code>torch.__config__.show()</code>.
+ Honest result: at 256&sup2; fp32, ATen won even under <code>max_autotune=True</code>; forcing
+ <code>backends="CPP"</code> errored with <code>NoValidChoicesError</code> (no eligible template) — a generated
+ GEMM beating ATen was <em>not</em> reproduced on CPU.</p>
+ <p class="mut"><b>Namespace asterisk:</b> "lands in ATen" usually means the <code>aten::*</code> namespace, but a
+ few extern entries wrap sibling dispatcher namespaces — <code>mkldnn::_linear_pointwise</code>,
+ <code>onednn::qlinear_pointwise</code> ${pill("torch/_inductor/mkldnn_lowerings.py",242)}. Still ATen in every
+ practical sense: implemented inside ATen's source tree ${pill("aten/src/ATen/native/mkldnn/Linear.cpp",209)},
+ routed through the same dispatcher, shipped in the same <code>libtorch_cpu.so</code>. The roster of all 23
+ extern kernels is in the Appendix.</p>`,
+ title_zh:`<span class="badge b-ext">extern</span> 贏得比賽的函式庫呼叫`,body_zh:`
+ <p><b>它是什麼：</b>精選的 ATen 運算——<code>extern_kernels.mm</code> 字面上<em>就是</em>
+ <code>torch.mm</code>（${pill("torch/_inductor/kernel/mm.py",139)}）。它出現在這裡，是因為它<b>贏了一場計時比賽</b>：
+ <code>tuned_mm</code> ${pill("torch/_inductor/kernel/mm.py",313)} 先用樸素的 if-else 閘門選出參賽者，再由碼錶決定贏家：</p>
+ <pre>best_choice = min(timings, key=timings.__getitem__)   # 延遲最低者勝出</pre>
+ <p>${pill("torch/_inductor/select_algorithm.py",4072)}——是實驗，不是啟發式。只有一個參賽者時（預設：只有 ATen）
+ 沒東西可計時，所以 <code>mm → extern_kernels.mm</code> 是確定性的。</p>
+ <div class="who"><div><div class="wt">由誰寫成</div><b>廠商函式庫</b>——oneDNN / BLAS / cuBLAS，經由 ATen</div>
+ <div><div class="wt">何時編譯</div>在<b>函式庫</b>建置時</div>
+ <div><div class="wt">本來可能是產生的嗎？</div><b>是</b>——若 Triton/CUTLASS 樣板勝出，mm 會變成綠色路徑的 kernel</div></div>
+ <p><b>在這個 build 上，具體而言：</b>oneDNN v3.12.0（<code>USE_MKLDNN=ON</code>）、Eigen 作為純 BLAS 後備
+ （<code>USE_MKL=OFF</code>）、沒有 cuBLAS（<code>USE_CUDA=0</code>）——來自 <code>torch.__config__.show()</code>。
+ 誠實的結果：在 256&sup2; fp32 上，即使 <code>max_autotune=True</code>，ATen 仍勝出；強制
+ <code>backends="CPP"</code> 則因沒有合格樣板而報 <code>NoValidChoicesError</code>——在 CPU 上<em>沒有</em>重現
+ 「產生的 GEMM 打敗 ATen」。</p>
+ <p class="mut"><b>命名空間小星號：</b>「落在 ATen」通常指 <code>aten::*</code> 命名空間，但少數 extern 條目包的是
+ dispatcher 的姊妹命名空間——<code>mkldnn::_linear_pointwise</code>、<code>onednn::qlinear_pointwise</code>
+ ${pill("torch/_inductor/mkldnn_lowerings.py",242)}。但在所有實質意義上仍是 ATen：實作就在 ATen 原始碼樹內
+ ${pill("aten/src/ATen/native/mkldnn/Linear.cpp",209)}、走同一個 dispatcher、裝在同一個
+ <code>libtorch_cpu.so</code> 裡。全部 23 個 extern kernel 的名冊在附錄。</p>`},
+aten:{title:`<span class="badge b-aten">aten</span> the fallback with no rival`,body:`
+ <p><b>What it is:</b> an op with no loop lowering and no template — <code>make_fallback</code>
+ ${pill("torch/_inductor/lowering.py",2728)} wraps it so the wrapper calls the <b>eager ATen kernel</b> directly,
+ e.g. <code>torch.ops.aten._cdist_forward.default(...)</code>. Typical reasons: data-dependent output shape
+ (<code>nonzero</code>), library-class numerics (linalg, FFT), stateful RNG.</p>
+ <div class="who"><div><div class="wt">who wrote it</div><b>PyTorch developers</b>, by hand — e.g.
+ <code>native::_cdist_forward</code> ${pill("aten/src/ATen/native/Distance.cpp",183)}</div>
+ <div><div class="wt">when compiled</div>at <b>PyTorch build time</b> — it lives inside <code>libtorch_cpu.so</code></div>
+ <div><div class="wt">specialized?</div><b>no</b> — one generic kernel for all shapes</div></div>
+ <p><b>Same tools, different moment:</b> the eager body also uses OpenMP + <code>at::vec</code> — it is good
+ code. But it's a sealed symbol in a prebuilt <code>.so</code>, which is exactly why it is a <b>fusion
+ barrier</b>: Inductor can call it, never reach inside it. ("Hand-written" is itself three layers — see the
+ foldable below the map.)</p>
+ <p class="mut">Both blue and amber call ATen. Blue <em>chose</em> it (won a race); amber <em>had no
+ alternative</em>. The roster of all 357 fallbacks is in the Appendix.</p>`,
+ title_zh:`<span class="badge b-aten">aten</span> 別無對手的回退`,body_zh:`
+ <p><b>它是什麼：</b>沒有迴圈 lowering、也沒有樣板的運算——<code>make_fallback</code>
+ ${pill("torch/_inductor/lowering.py",2728)} 把它包起來，讓 wrapper 直接呼叫 <b>eager 的 ATen kernel</b>，
+ 例如 <code>torch.ops.aten._cdist_forward.default(...)</code>。常見原因：輸出形狀依資料而定
+ （<code>nonzero</code>）、函式庫級數值運算（linalg、FFT）、帶狀態的 RNG。</p>
+ <div class="who"><div><div class="wt">由誰寫成</div><b>PyTorch 開發者</b>，人手寫——例如
+ <code>native::_cdist_forward</code> ${pill("aten/src/ATen/native/Distance.cpp",183)}</div>
+ <div><div class="wt">何時編譯</div>在 <b>PyTorch 建置時</b>——它活在 <code>libtorch_cpu.so</code> 裡</div>
+ <div><div class="wt">是否特化？</div><b>否</b>——一個通用 kernel 服務所有形狀</div></div>
+ <p><b>同樣的工具、不同的時刻：</b>eager 的主體同樣使用 OpenMP + <code>at::vec</code>——它是好程式碼。
+ 但它是預編譯 <code>.so</code> 裡的密封符號，這正是它是<b>融合屏障</b>的原因：Inductor 能呼叫它，
+ 永遠無法伸進它內部。（「手寫」本身又分三層——見地圖下方的摺疊區。）</p>
+ <p class="mut">藍色與琥珀色都呼叫 ATen。藍色是<em>選了它</em>（贏了比賽）；琥珀色是<em>別無選擇</em>。
+ 全部 357 個回退的名冊在附錄。</p>`}};
+const bigCode=document.getElementById("bigCode"),bigMap=document.getElementById("bigMap"),bigDet=document.getElementById("bigDetail");
+CODE.forEach(l=>{const s=document.createElement("span");
+ s.className="cl"+(l.form?` op f-${l.form}`:"");
+ s.textContent=l.t||" ";
+ if(l.form)s.onclick=()=>selForm(l.form);
+ bigCode.appendChild(s);});
+function renderMap(){
+ bigMap.innerHTML="";
+ Object.entries(FORM).forEach(([k,f])=>{
+  const c=document.createElement("div");c.className="bcol"+(k===curForm?" hi":"");c.dataset.form=k;
+  let h=`<div class="bcap c-${f.cls}">${pk(f,"cap")}</div>`;
+  pk(f,"nodes").forEach((n,i)=>{h+=`<div class="bnode c-${f.cls}">${n}</div>`;
+    if(i<pk(f,"nodes").length-1)h+=`<div class="bvl"><i></i><b>&#9660;</b></div>`;});
+  c.innerHTML=h;c.onclick=()=>selForm(k);bigMap.appendChild(c);});
+}
+function selForm(k){
+ curForm=k;
+ document.querySelectorAll(".bigcode .cl.op").forEach(e=>e.classList.toggle("hi",e.classList.contains("f-"+k)));
+ document.querySelectorAll(".bcol").forEach(e=>e.classList.toggle("hi",e.dataset.form===k));
+ const d=DETAIL[k];
+ bigDet.innerHTML=`<div class="hd"><span class="ttl">${pk(d,"title")}</span></div><div class="bd">${pk(d,"body")}</div>`;
+}
+renderMap();
+selForm("fused");
+
+/* ---------- glossary ---------- */
+const GLOSS=[
+ ["FX graph","the flat list of ATen ops Dynamo+AOTAutograd produce — Inductor's input","torch/_inductor/graph.py",368,"Dynamo+AOTAutograd 產生的扁平 ATen 運算清單——Inductor 的輸入"],
+ ["lowering","translating one ATen op into an IR node via the lowerings registry","torch/_inductor/lowering.py",124,"透過 lowerings 登錄表，把一個 ATen 運算翻譯成 IR 節點"],
+ ["inner_fn","the recipe: a function emitting scalar ops for one output element","torch/_inductor/ir.py",1145,"食譜：為單一輸出元素發出純量運算的函式"],
+ ["realize","materializing a recipe into a buffer — ends fusion across it","torch/_inductor/ir.py",5178,"把食譜具現成 buffer——跨越它的融合就此結束"],
+ ["vertical fusion","folding a producer's recipe into its consumer's loop","torch/_inductor/scheduler.py",7669,"把生產者的食譜摺進消費者的迴圈"],
+ ["wrapper / call()","the generated program that allocates buffers and fires kernels","torch/_inductor/codegen/wrapper.py",1257,"產生出的程式：配置 buffer 並啟動各 kernel"],
+ ["extern_kernels","namespace of curated ATen library calls (the blue path)","torch/_inductor/select_algorithm.py",125,"精選 ATen 函式庫呼叫的命名空間（藍色路徑）"],
+ ["make_fallback","registers an op as a direct eager-ATen call (the amber path)","torch/_inductor/lowering.py",2728,"把運算登錄為直接的 eager ATen 呼叫（琥珀色路徑）"],
+ ["autotuning","timing the eligible implementations and keeping the fastest","torch/_inductor/select_algorithm.py",5823,"對合格實作計時並保留最快者"],
+ ["guard","cheap runtime check on a symbolic size; failure → recompile","torch/_inductor/sizevars.py",957,"對符號化大小的廉價執行期檢查；失敗即重新編譯"],
+];
+function renderGloss(){
+ document.getElementById("glossaryList").innerHTML=GLOSS.map(g=>`<dt>${g[0]} ${pill(g[2],g[3])}</dt><dd>${isZh()&&g[4]?g[4]:g[1]}</dd>`).join("");
+}
+renderGloss();
+
+/* ---------- Ch7 SKL integration cards ---------- */
+const ARR=`<span class="pa">→</span>`;
+const SKLOPT=[
+ {t:"A — below the dispatcher",t_zh:"A — dispatcher 之下",d:"zero Inductor changes",d_zh:"Inductor 零改動",
+  body:`<div class="pchain"><span class="pc">x @ w</span>${ARR}<span class="pc">aten.mm</span>${ARR}<span class="pc">extern_kernels.mm</span>${ARR}<span class="pc">aten::mm</span>${ARR}<span class="pc">dispatcher</span>${ARR}<span class="pc new">SKL gemm</span></div>
+  <p>The blue and amber paths are untouched — only the bottom node's <em>implementation</em> changes, and eager
+  mode benefits too. <b>The seam is real, existing code</b> — the full CPU chain today:</p>
+  <pre>aten::mm — dispatcher slot (aten::mm.out, CPU)
+ → wrapper_CPU_mm_out_out                          <span class="c">// GENERATED: TORCH_LIBRARY_IMPL(aten, CPU)</span>
+                                                   <span class="c">// by torchgen → build/aten/src/ATen/RegisterCPU_0.cpp</span>
+ → mm_out_cpu → addmm_impl_cpu_
+     ├─ size heuristic → mkldnn_matmul(...)        <span class="c">// oneDNN exit</span>
+     │    <span class="c">(on failure: "switching to BLAS gemm")</span>
+     └─ cpublas::gemm → gemm(float)
+         ├─ cblas_sgemm(...)                       <span class="g">// THE SEAM — an ABI symbol; the LINKER decides who provides it</span>
+         └─ gemm_stub → hand-written fallback      <span class="c">// when built with no BLAS at all</span></pre>
+  <p class="mut">${pill("aten/src/ATen/native/native_functions.yaml",4077)}
+  ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1627)} ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1391)}
+  ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1517)} ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1533)}
+  ${pill("aten/src/ATen/native/CPUBlas.cpp",207)} ${pill("aten/src/ATen/native/CPUBlas.cpp",228)}
+  ${pill("aten/src/ATen/native/cpu/BlasKernel.cpp",478)} — on this build the symbol is provided by Eigen
+  (<code>USE_EIGEN_FOR_BLAS=ON</code>); in A1 it would be SKL. The call site never changes.</p>
+  <p>Two variants:</p>
+  <p><b>A1 — SKL speaks the BLAS API: zero patch.</b> PyTorch's Generic BLAS slot accepts any cblas-compatible
+  library ${pill("cmake/Dependencies.cmake",276)}, reached from <code>aten::mm</code> via
+  <code>cpublas::gemm</code> ${pill("aten/src/ATen/native/CPUBlas.cpp",152)}:</p>
+  <pre class="diff"><span class="ctx"># build command — no source change at all</span><span class="add">$ BLAS=Generic GENERIC_BLAS_LIBRARIES=/opt/skl/lib/libskl.so \\
+    pip install -e . -v --no-build-isolation</span></pre>
+  <p><b>A2 — not BLAS-shaped: override the aten kernels from an extension</b> (out-of-tree;
+  <code>TORCH_LIBRARY_IMPL</code> ${pill("torch/library.h",1056)}). The op's schema dictates your kernel's exact
+  signature ${pill("aten/src/ATen/native/native_functions.yaml",4085)}, and there are <b>two slots to claim</b> —
+  functional <code>mm</code> (eager <code>a @ b</code>) and <code>mm.out</code> (what
+  <code>extern_kernels.mm</code> calls):</p>
+  <pre class="diff"><span class="ctx">// skl_aten_overrides.cpp — loaded via torch.ops.load_library("libskl_aten.so")
+// schema: mm.out(Tensor self, Tensor mat2, *, Tensor(a!) out) -&gt; Tensor(a!)</span><span class="add">at::Tensor&amp; skl_mm_out(const at::Tensor&amp; self, const at::Tensor&amp; mat2, at::Tensor&amp; out) {
+  TORCH_CHECK(self.dim() == 2 &amp;&amp; mat2.dim() == 2, "skl_mm_out: 2-D only");
+  skl_sgemm(self.data_ptr&lt;float&gt;(), mat2.data_ptr&lt;float&gt;(),  // the real SKL call —
+            out.data_ptr&lt;float&gt;(),                            // NEVER at::mm here: it
+            self.size(0), self.size(1), mat2.size(1));         // re-dispatches to YOU
+  return out;
+}
+at::Tensor skl_mm(const at::Tensor&amp; self, const at::Tensor&amp; mat2) {
+  auto out = at::empty({self.size(0), mat2.size(1)}, self.options());
+  return skl_mm_out(self, mat2, out);
+}
+TORCH_LIBRARY_IMPL(aten, CPU, m) {
+  m.impl("mm",     skl_mm);       // eager a @ b lands here
+  m.impl("mm.out", skl_mm_out);   // extern_kernels.mm lands here
+}</span></pre>
+  <ul>
+    <li><b>Last registration wins.</b> Your impl takes the (op, CPU) slot from torchgen's generated wrapper —
+      and the dispatcher tells you so, warning "Overriding a previously registered kernel&hellip;"
+      ${pill("aten/src/ATen/core/dispatch/OperatorEntry.cpp",209)}. Effect is process-wide: eager and compiled,
+      every caller.</li>
+    <li><b>The recursion trap.</b> Inside the override, never call <code>at::mm</code> / <code>at::matmul</code>
+      — they re-dispatch through the CPU key, i.e. straight back into your own kernel.</li>
+    <li><b>No <code>register_fake</code> needed</b> — unlike approach C: <code>aten::mm</code>'s existing Meta
+      kernel keeps serving compile-time shape inference. You occupied only the CPU <em>runtime</em> slot.</li>
+  </ul>
+  <p><b>Using the file — build it, load it, done.</b> <code>TORCH_LIBRARY_IMPL</code> expands to a <em>static
+  initializer</em> ${pill("torch/library.h",1064)}, so registration fires the moment the <code>.so</code> is
+  loaded into the process — there is no API to call beyond loading. JIT-build with
+  <code>cpp_extension.load</code> ${pill("torch/utils/cpp_extension.py",1818)}, or build once and
+  <code>torch.ops.load_library</code> ${pill("torch/_ops.py",1489)}:</p>
+  <pre class="diff"><span class="ctx"># JIT: compile + dlopen in one step</span><span class="add">from torch.utils import cpp_extension
+cpp_extension.load(name="skl_aten_overrides",
+    sources=["skl_aten_overrides.cpp"],
+    extra_ldflags=["-lskl"],           # link the vendor library
+    is_python_module=False)            # nothing to import — registration IS the side effect</span><span class="ctx"># AOT alternative: build the .so once, then in every process that runs models:</span><span class="add">torch.ops.load_library("libskl_aten_overrides.so")</span></pre>
+  <p><b>Executed live on this build</b> (stand-in body; reproduce: <code>agent_space/skl_a2/driver.py</code>).
+  Verify with <code>torch._C._dispatch_dump("aten::mm")</code>
+  ${pill("torch/csrc/utils/python_dispatch.cpp",520)} — and the dispatcher announces the takeover
+  ${pill("aten/src/ATen/core/dispatch/OperatorEntry.cpp",209)}:</p>
+  <pre><span class="c"># real captured output</span>
+BEFORE: CPU: registered at build/aten/src/ATen/RegisterCPU_0.cpp:3234    <span class="c"># torchgen's wrapper</span>
+<span class="c">Warning: Overriding a previously registered kernel ...
+         new kernel: registered at agent_space/skl_a2/skl_aten_overrides.cpp:32</span>
+AFTER:  CPU: registered at agent_space/skl_a2/skl_aten_overrides.cpp:32  <span class="g"># yours; old one now "(inactive)"</span>
+[SKL] sgemm 32x16x8      <span class="g"># eager a @ b hit it</span>
+[SKL] sgemm 32x16x8      <span class="g"># compiled relu(x @ w) hit it — via extern_kernels.mm</span>
+eager a@b correct: True &middot; compiled correct: True</pre>
+  <p class="mut">Runnable even without any C++ — the pure-Python equivalent of the same mechanism
+  (<code>torch.library.Library</code> ${pill("torch/library.py",212)}, <code>.impl</code>
+  ${pill("torch/library.py",438)}):</p>
+  <pre class="diff"><span class="add">lib = torch.library.Library("aten", "IMPL")     # same registry the C++ macro targets
+lib.impl("mm",     skl_mm_py,     "CPU")
+lib.impl("mm.out", skl_mm_out_py, "CPU")</span></pre>
+  <p class="mut">A2 uses the <em>same macro</em> torchgen used to register the stock kernel — and claims the
+  <em>same dispatch slot</em>, so it replaces <code>wrapper_CPU_mm_out_out</code> <b>wholesale</b>: no
+  <code>mm_out_cpu</code>, no oneDNN heuristic — your kernel is the entire CPU <code>mm</code>. A1, by contrast,
+  keeps the whole chain and only swaps the <code>cblas_sgemm</code> provider at the bottom.</p>
+  <p class="mut"><b>Trade-off:</b> SKL <em>replaces</em> the default library instead of racing it — if SKL is
+  slower for some shape, nothing catches that.</p>`,
+  body_zh:`<div class="pchain"><span class="pc">x @ w</span>${ARR}<span class="pc">aten.mm</span>${ARR}<span class="pc">extern_kernels.mm</span>${ARR}<span class="pc">aten::mm</span>${ARR}<span class="pc">dispatcher</span>${ARR}<span class="pc new">SKL gemm</span></div>
+  <p>藍色與琥珀色路徑完全不動——只有最底層節點的<em>實作</em>改變，eager 模式也同時受惠。
+  <b>這道接縫是真實存在的程式碼</b>——今日 CPU 上的完整鏈：</p>
+  <pre>aten::mm — dispatcher 插槽（aten::mm.out, CPU）
+ → wrapper_CPU_mm_out_out                          <span class="c">// 生成的：TORCH_LIBRARY_IMPL(aten, CPU)</span>
+                                                   <span class="c">// 由 torchgen → build/aten/src/ATen/RegisterCPU_0.cpp</span>
+ → mm_out_cpu → addmm_impl_cpu_
+     ├─ 尺寸啟發式 → mkldnn_matmul(...)            <span class="c">// oneDNN 出口</span>
+     │    <span class="c">（失敗時：「switching to BLAS gemm」）</span>
+     └─ cpublas::gemm → gemm(float)
+         ├─ cblas_sgemm(...)                       <span class="g">// 接縫——這是 ABI 符號；由「連結器」決定誰來提供</span>
+         └─ gemm_stub → 手寫後備迴圈                <span class="c">// 完全沒有 BLAS 時</span></pre>
+  <p class="mut">${pill("aten/src/ATen/native/native_functions.yaml",4077)}
+  ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1627)} ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1391)}
+  ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1517)} ${pill("aten/src/ATen/native/LinearAlgebra.cpp",1533)}
+  ${pill("aten/src/ATen/native/CPUBlas.cpp",207)} ${pill("aten/src/ATen/native/CPUBlas.cpp",228)}
+  ${pill("aten/src/ATen/native/cpu/BlasKernel.cpp",478)}——在本 build 上這個符號由 Eigen 提供
+  （<code>USE_EIGEN_FOR_BLAS=ON</code>）；在 A1 中則由 SKL 提供。呼叫點完全不變。</p>
+  <p>兩種變體：</p>
+  <p><b>A1 — SKL 講 BLAS API：零補丁。</b>PyTorch 的 Generic BLAS 插槽接受任何 cblas 相容函式庫
+  ${pill("cmake/Dependencies.cmake",276)}，由 <code>aten::mm</code> 經 <code>cpublas::gemm</code>
+  ${pill("aten/src/ATen/native/CPUBlas.cpp",152)} 抵達：</p>
+  <pre class="diff"><span class="ctx"># 建置指令——完全不改原始碼</span><span class="add">$ BLAS=Generic GENERIC_BLAS_LIBRARIES=/opt/skl/lib/libskl.so \\
+    pip install -e . -v --no-build-isolation</span></pre>
+  <p><b>A2 — 不是 BLAS 形狀：從擴充套件覆寫 aten kernel</b>（樹外；<code>TORCH_LIBRARY_IMPL</code>
+  ${pill("torch/library.h",1056)}）。運算的 schema 決定你 kernel 的精確簽章
+  ${pill("aten/src/ATen/native/native_functions.yaml",4085)}，而且<b>有兩個插槽要佔</b>——函數式
+  <code>mm</code>（eager 的 <code>a @ b</code>）與 <code>mm.out</code>（<code>extern_kernels.mm</code>
+  呼叫的那個）：</p>
+  <pre class="diff"><span class="ctx">// skl_aten_overrides.cpp — 以 torch.ops.load_library("libskl_aten.so") 載入
+// schema：mm.out(Tensor self, Tensor mat2, *, Tensor(a!) out) -&gt; Tensor(a!)</span><span class="add">at::Tensor&amp; skl_mm_out(const at::Tensor&amp; self, const at::Tensor&amp; mat2, at::Tensor&amp; out) {
+  TORCH_CHECK(self.dim() == 2 &amp;&amp; mat2.dim() == 2, "skl_mm_out: 2-D only");
+  skl_sgemm(self.data_ptr&lt;float&gt;(), mat2.data_ptr&lt;float&gt;(),  // 真正的 SKL 呼叫——
+            out.data_ptr&lt;float&gt;(),                            // 千萬別在這裡呼叫 at::mm：
+            self.size(0), self.size(1), mat2.size(1));         // 它會重新分派回「你自己」
+  return out;
+}
+at::Tensor skl_mm(const at::Tensor&amp; self, const at::Tensor&amp; mat2) {
+  auto out = at::empty({self.size(0), mat2.size(1)}, self.options());
+  return skl_mm_out(self, mat2, out);
+}
+TORCH_LIBRARY_IMPL(aten, CPU, m) {
+  m.impl("mm",     skl_mm);       // eager 的 a @ b 落在這裡
+  m.impl("mm.out", skl_mm_out);   // extern_kernels.mm 落在這裡
+}</span></pre>
+  <ul>
+    <li><b>最後註冊者勝出。</b>你的實作從 torchgen 生成的 wrapper 手中接下（運算, CPU）插槽——dispatcher 還會
+      明白告訴你：「Overriding a previously registered kernel…」
+      ${pill("aten/src/ATen/core/dispatch/OperatorEntry.cpp",209)}。效果遍及整個行程：eager 與編譯、所有呼叫者。</li>
+    <li><b>遞迴陷阱。</b>在覆寫內部，絕不要呼叫 <code>at::mm</code> / <code>at::matmul</code>——它們會經由 CPU
+      分派鍵重新分派，直接繞回你自己的 kernel。</li>
+    <li><b>不需要 <code>register_fake</code></b>——與做法 C 不同：<code>aten::mm</code> 既有的 Meta kernel
+      仍持續服務編譯期形狀推導。你只佔據了 CPU 的<em>執行期</em>插槽。</li>
+  </ul>
+  <p><b>如何使用這個檔案——編譯、載入，就完成了。</b><code>TORCH_LIBRARY_IMPL</code> 展開成一個<em>靜態
+  初始化器</em> ${pill("torch/library.h",1064)}，所以 <code>.so</code> 一被載入行程，註冊就立刻發生——除了
+  「載入」之外沒有任何 API 要呼叫。用 <code>cpp_extension.load</code>
+  ${pill("torch/utils/cpp_extension.py",1818)} 即時編譯，或先建好再用 <code>torch.ops.load_library</code>
+  ${pill("torch/_ops.py",1489)}：</p>
+  <pre class="diff"><span class="ctx"># JIT：編譯 + dlopen 一步完成</span><span class="add">from torch.utils import cpp_extension
+cpp_extension.load(name="skl_aten_overrides",
+    sources=["skl_aten_overrides.cpp"],
+    extra_ldflags=["-lskl"],           # 連結廠商函式庫
+    is_python_module=False)            # 沒有東西要 import——「註冊」本身就是副作用</span><span class="ctx"># AOT 替代：把 .so 建好一次，之後在每個要跑模型的行程裡：</span><span class="add">torch.ops.load_library("libskl_aten_overrides.so")</span></pre>
+  <p><b>已在本 build 上實際執行</b>（替身主體；重現：<code>agent_space/skl_a2/driver.py</code>）。
+  用 <code>torch._C._dispatch_dump("aten::mm")</code> ${pill("torch/csrc/utils/python_dispatch.cpp",520)}
+  驗證——而且 dispatcher 會主動宣告這次接管 ${pill("aten/src/ATen/core/dispatch/OperatorEntry.cpp",209)}：</p>
+  <pre><span class="c"># 真實擷取輸出</span>
+BEFORE: CPU: registered at build/aten/src/ATen/RegisterCPU_0.cpp:3234    <span class="c"># torchgen 的 wrapper</span>
+<span class="c">Warning: Overriding a previously registered kernel ...
+         new kernel: registered at agent_space/skl_a2/skl_aten_overrides.cpp:32</span>
+AFTER:  CPU: registered at agent_space/skl_a2/skl_aten_overrides.cpp:32  <span class="g"># 你的；舊的標為 "(inactive)"</span>
+[SKL] sgemm 32x16x8      <span class="g"># eager 的 a @ b 命中</span>
+[SKL] sgemm 32x16x8      <span class="g"># 編譯後的 relu(x @ w) 命中——經由 extern_kernels.mm</span>
+eager a@b correct: True &middot; compiled correct: True</pre>
+  <p class="mut">就算完全不用 C++ 也能跑——同一機制的純 Python 等價物（<code>torch.library.Library</code>
+  ${pill("torch/library.py",212)}、<code>.impl</code> ${pill("torch/library.py",438)}）：</p>
+  <pre class="diff"><span class="add">lib = torch.library.Library("aten", "IMPL")     # 與 C++ 巨集對準同一個註冊表
+lib.impl("mm",     skl_mm_py,     "CPU")
+lib.impl("mm.out", skl_mm_out_py, "CPU")</span></pre>
+  <p class="mut">A2 用的<em>正是</em> torchgen 註冊原廠 kernel 時用的同一個巨集——並佔據<em>同一個分派插槽</em>，
+  所以它<b>整個取代</b> <code>wrapper_CPU_mm_out_out</code>：沒有 <code>mm_out_cpu</code>、沒有 oneDNN
+  啟發式——你的 kernel 就是 CPU 上 <code>mm</code> 的全部。相對地，A1 保留整條鏈，只在最底部換掉
+  <code>cblas_sgemm</code> 的提供者。</p>
+  <p class="mut"><b>取捨：</b>SKL 是<em>取代</em>預設函式庫，而非與之比賽——若某形狀下 SKL 較慢，沒有機制能發現。</p>`},
+ {t:"B — a new blue contestant",t_zh:"B — 新的藍色參賽者",d:"races under autotuning",d_zh:"在自動調校下比賽",
+  body:`<div class="pchain"><span class="pc">tuned_mm</span>${ARR}<span class="pc">autotune { aten_mm, <b>skl_mm</b>, templates }</span>${ARR}<span class="pc">min(timings)</span>${ARR}<span class="pc new">winner in call()</span></div>
+  <p>SKL becomes a <em>contestant</em>: the stopwatch ${pill("torch/_inductor/select_algorithm.py",4072)} picks
+  the fastest per shape. The real patch, against the pinned commit — first the choice, beside <code>aten_mm</code>:</p>
+  <pre class="diff"><span class="hunk">--- torch/_inductor/kernel/mm.py   (context = real line mm.py:139)</span><span class="ctx">aten_mm = ExternKernelChoice(torch.mm, "at::mm_out", op_overload=aten.mm.out)</span><span class="add">skl_mm = ExternKernelChoice(
+    torch.ops.skl.mm,              # the SKL extension's op — TORCH_LIBRARY(skl), C++
+    name="skl_mm",                 # REQUIRED — see why below
+    has_out_variant=False,         # we defined no skl::mm.out overload
+    op_overload=torch.ops.skl.mm.default,
+)</span></pre>
+  <p class="mut"><b>Why these arguments — a bug caught by reading the real constructor:</b> the name defaults to
+  <code>kernel.__name__</code> ${pill("torch/_inductor/select_algorithm.py",3095)}, which for
+  <code>torch.ops.skl.mm</code> is <code>"mm"</code> — tripping the duplicate-registration assert
+  ${pill("torch/_inductor/select_algorithm.py",3097)} against the existing <code>extern_kernels.mm</code>. Hence
+  <code>name="skl_mm"</code>; and with no <code>.out</code> overload defined, <code>has_out_variant=False</code> +
+  the <code>.default</code> overload. (Also: a module-level <code>torch.ops.skl.mm</code> reference requires the
+  skl op to be registered before the first compile imports this file — otherwise construct the choice lazily
+  inside <code>tuned_mm</code>.)</p>
+  <p>then enter it in the race inside <code>tuned_mm</code>:</p>
+  <pre class="diff"><span class="hunk">@@ inside tuned_mm   (context = real lines mm.py:409-410)</span><span class="ctx">    if use_aten_gemm_kernels():
+        templates_to_use.append(aten_handler)</span><span class="add">    if mat1.get_device().type == "cpu":   # gate behind a config flag in real life
+        templates_to_use.append(skl_mm)    # SKL joins the race</span></pre>
+  <p><b>Found only by running:</b> every contestant's <code>uid</code> needs a registered <em>template
+  heuristic</em> — <code>get_ktc</code> looks one up per uid ${pill("torch/_inductor/choices.py",239)}; with none
+  registered, the config generator silently yields nothing and the choice <b>vanishes from the race</b>
+  (<code>NoValidChoicesError</code> when alone). The fix ships as part of the in-tree patch — register ATen's
+  own pseudo-heuristic ${pill("torch/_inductor/template_heuristics/aten.py",30)} for the new uid, next to the
+  existing ones, against the choice's <em>namespaced</em> <code>.uid</code> ("aten::skl_mm"), not the bare name:</p>
+  <pre class="diff"><span class="add">from torch._inductor.template_heuristics.aten import ATenConfigHeuristics
+from torch._inductor.template_heuristics.registry import register_template_heuristic
+
+@register_template_heuristic(skl_mm.uid, None)   # uid is "aten::skl_mm" — namespaced!
+class SKLConfigHeuristics(ATenConfigHeuristics):
+    pass</span></pre>
+  <p><b>Executed live on this build</b> (stand-in op body; reproduce: <code>agent_space/skl_b/</code> — apply
+  <code>skl_b.patch</code>, run, revert). Both modes:</p>
+  <pre><span class="c"># solo (max_autotune_gemm_backends=""): SKL is the only contestant — real generated call():</span>
+buf0 = extern_kernels.<span class="f">skl_mm</span>(arg0_1, arg1_1)
+<span class="c"># race (default backends): both contestants timed — the stopwatch is real:</span>
+mm      0.7659 ms      <span class="c"># aten_mm (oneDNN/Eigen underneath)</span>
+skl_mm  24.9273 ms     <span class="c"># stand-in = naive C++ loop — loses 32x, as it should</span>
+extern_kernels.<span class="f">mm</span>(arg0_1, arg1_1, out=buf0)   <span class="g"># the stopwatch protected you — correct: True</span></pre>
+  <p class="mut"><b>Where the implementation lives — the oneDNN pattern:</b> the callable is your C++
+  extension's op (<code>TORCH_LIBRARY(skl)</code> + CPU and Meta impls — the same shape as
+  <code>mkldnn::_linear_pointwise</code> ${pill("aten/src/ATen/native/mkldnn/Linear.cpp",483)}); the Meta impl is
+  the C++ analog of <code>register_fake</code>, and approach C's Python <code>custom_op</code> is merely the
+  quick-prototype form of this same registration. <code>ExternKernelChoice</code>
+  ${pill("torch/_inductor/select_algorithm.py",3072)} registers it onto <code>extern_kernels</code>
+  automatically. <b>Trade-off:</b> per-op wiring, but best-of-both per shape — exactly what autotuning exists
+  for.</p>`,
+  body_zh:`<div class="pchain"><span class="pc">tuned_mm</span>${ARR}<span class="pc">自動調校 { aten_mm, <b>skl_mm</b>, 樣板 }</span>${ARR}<span class="pc">min(timings)</span>${ARR}<span class="pc new">call() 中的贏家</span></div>
+  <p>SKL 成為一名<em>參賽者</em>：碼錶 ${pill("torch/_inductor/select_algorithm.py",4072)} 逐形狀挑出最快者。
+  針對固定 commit 的真實補丁——先在 <code>aten_mm</code> 旁建立選項：</p>
+  <pre class="diff"><span class="hunk">--- torch/_inductor/kernel/mm.py   （context = 真實行 mm.py:139）</span><span class="ctx">aten_mm = ExternKernelChoice(torch.mm, "at::mm_out", op_overload=aten.mm.out)</span><span class="add">skl_mm = ExternKernelChoice(
+    torch.ops.skl.mm,              # SKL 擴充套件的運算——TORCH_LIBRARY(skl)，C++
+    name="skl_mm",                 # 必填——原因見下方
+    has_out_variant=False,         # 我們沒有定義 skl::mm.out 過載
+    op_overload=torch.ops.skl.mm.default,
+)</span></pre>
+  <p class="mut"><b>為什麼是這些參數——讀真實建構子抓到的一個 bug：</b>名稱預設為
+  <code>kernel.__name__</code> ${pill("torch/_inductor/select_algorithm.py",3095)}，對
+  <code>torch.ops.skl.mm</code> 而言就是 <code>"mm"</code>——會撞上既有 <code>extern_kernels.mm</code> 的
+  重複註冊斷言 ${pill("torch/_inductor/select_algorithm.py",3097)}。因此必須 <code>name="skl_mm"</code>；
+  且因為沒有定義 <code>.out</code> 過載，要用 <code>has_out_variant=False</code> + <code>.default</code> 過載。
+  （另外：模組層級引用 <code>torch.ops.skl.mm</code>，要求 skl 運算在首次編譯匯入本檔之前就已註冊——否則請改在
+  <code>tuned_mm</code> 內延遲建構。）</p>
+  <p>再讓它在 <code>tuned_mm</code> 內報名參賽：</p>
+  <pre class="diff"><span class="hunk">@@ tuned_mm 內   （context = 真實行 mm.py:409-410）</span><span class="ctx">    if use_aten_gemm_kernels():
+        templates_to_use.append(aten_handler)</span><span class="add">    if mat1.get_device().type == "cpu":   # 實務上應加上 config 旗標
+        templates_to_use.append(skl_mm)    # SKL 加入比賽</span></pre>
+  <p><b>只有實際執行才會發現：</b>每個參賽者的 <code>uid</code> 都需要註冊一個<em>樣板啟發式</em>——
+  <code>get_ktc</code> 會按 uid 查找 ${pill("torch/_inductor/choices.py",239)}；沒註冊的話，組態產生器會
+  靜默地什麼都不產出，這個選項就<b>從比賽中消失</b>（落單時則報 <code>NoValidChoicesError</code>）。
+  修法隨同樹內補丁一起出貨——把 ATen 自己的偽啟發式為新 uid 註冊在既有那些旁邊
+  ${pill("torch/_inductor/template_heuristics/aten.py",30)}，並用選項<em>帶命名空間</em>的
+  <code>.uid</code>（"aten::skl_mm"）註冊，而非裸名稱：</p>
+  <pre class="diff"><span class="add">from torch._inductor.template_heuristics.aten import ATenConfigHeuristics
+from torch._inductor.template_heuristics.registry import register_template_heuristic
+
+@register_template_heuristic(skl_mm.uid, None)   # uid 是 "aten::skl_mm"——有命名空間！
+class SKLConfigHeuristics(ATenConfigHeuristics):
+    pass</span></pre>
+  <p><b>已在本 build 上實際執行</b>（替身運算主體；重現：<code>agent_space/skl_b/</code>——套用
+  <code>skl_b.patch</code>、執行、還原）。兩種模式：</p>
+  <pre><span class="c"># solo（max_autotune_gemm_backends=""）：SKL 是唯一參賽者——真實產生的 call()：</span>
+buf0 = extern_kernels.<span class="f">skl_mm</span>(arg0_1, arg1_1)
+<span class="c"># race（預設 backends）：兩位參賽者都被計時——碼錶是真的：</span>
+mm      0.7659 ms      <span class="c"># aten_mm（底層為 oneDNN/Eigen）</span>
+skl_mm  24.9273 ms     <span class="c"># 替身 = 樸素 C++ 迴圈——輸 32 倍，理所當然</span>
+extern_kernels.<span class="f">mm</span>(arg0_1, arg1_1, out=buf0)   <span class="g"># 碼錶保護了你——correct: True</span></pre>
+  <p class="mut"><b>實作住在哪裡——oneDNN 模式：</b>可呼叫物件是你 C++ 擴充套件的運算
+  （<code>TORCH_LIBRARY(skl)</code> + CPU 與 Meta 實作——與 <code>mkldnn::_linear_pointwise</code>
+  ${pill("aten/src/ATen/native/mkldnn/Linear.cpp",483)} 同一形態）；Meta 實作是 <code>register_fake</code>
+  的 C++ 對應物，而做法 C 的 Python <code>custom_op</code> 只是這同一註冊的快速原型形式。
+  <code>ExternKernelChoice</code> ${pill("torch/_inductor/select_algorithm.py",3072)} 會自動把它登錄到
+  <code>extern_kernels</code>。<b>取捨：</b>需逐運算接線，但能逐形狀取兩者之長——這正是自動調校存在的目的。</p>`},
+ {t:"C — a new amber entry",t_zh:"C — 新的琥珀色條目",d:"fastest prototype",d_zh:"最快的原型",
+  body:`<div class="pchain"><span class="pc">torch.ops.skl.mm</span>${ARR}<span class="pc">FallbackKernel</span>${ARR}<span class="pc new">call(): torch.ops.skl.mm(...)</span>${ARR}<span class="pc">SKL</span></div>
+  <p>Pure out-of-tree — no PyTorch patch. Define the op with a <em>fake</em> (meta) implementation so
+  <code>torch.compile</code> can trace shapes ${pill("torch/_library/custom_ops.py",41)}; Inductor's implicit
+  fallback ${pill("torch/_inductor/config.py",897)} ${pill("torch/_inductor/graph.py",1390)} wraps it in a
+  <code>FallbackKernel</code> ${pill("torch/_inductor/ir.py",8765)} automatically:</p>
+  <pre class="diff"><span class="ctx"># skl_ops.py — no PyTorch source change</span><span class="add">import torch
+
+@torch.library.custom_op("skl::mm", mutates_args=())
+def skl_mm(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    return _skl_bindings.gemm(a, b)        # your C binding
+
+@skl_mm.register_fake                       # shape inference for compile
+def _(a, b):
+    return a.new_empty(a.shape[0], b.shape[1])
+
+# USE it — the missing step: something must put the op in the graph.
+# NOTE: unlike A and B, this changes YOUR MODEL CODE — 'x @ w' keeps its
+# normal path; only explicit torch.ops.skl.mm calls (or a swap pass) hit SKL.
+def f(x, w):
+    return torch.relu(torch.ops.skl.mm(x, w))   # (or a pre-grad pass swaps aten.mm -> skl.mm)</span></pre>
+  <p><b>Where does <code>torch.ops.skl.mm</code> come from?</b> The <code>@custom_op("skl::mm")</code> decorator
+  <em>registers</em> the op into the dispatcher as a side effect; <code>torch.ops</code> is a dynamic namespace
+  that then resolves <code>torch.ops.skl.mm</code> to it. So the defining module just has to be <em>imported</em>
+  before <code>torch.compile</code> runs (and in any process that later loads the compiled artifact) — no other
+  wiring.</p>
+  <p><b>Verified live on this build</b> (with <code>torch.mm</code> standing in for the SKL binding — the
+  graph/wrapper mechanics are identical regardless of the body). The real generated <code>call()</code>:</p>
+  <pre><span class="c"># real captured output — reproduce: agent_space/skl_demo.py</span>
+<span class="c"># Topologically Sorted Source Nodes: [mm], Original ATen: [skl.mm]</span>
+buf0 = torch.ops.skl.mm.<span class="f">default</span>(arg0_1, arg1_1)   <span class="g"># the amber call — your op</span>
+...
+<span class="f">cpp_fused_relu_0</span>(buf2)                            <span class="g"># relu still fuses around it</span></pre>
+  <p class="mut"><b>Trade-off:</b> works for <em>any</em> op in an afternoon — but amber semantics: a fusion
+  barrier, no race, and it is taken wherever you call it whether or not it's fastest. Prototype here, then
+  graduate to A or B.</p>`,
+  body_zh:`<div class="pchain"><span class="pc">torch.ops.skl.mm</span>${ARR}<span class="pc">FallbackKernel</span>${ARR}<span class="pc new">call(): torch.ops.skl.mm(...)</span>${ARR}<span class="pc">SKL</span></div>
+  <p>純樹外——不動 PyTorch。為運算定義一個 <em>fake</em>（meta）實作，讓 <code>torch.compile</code>
+  能推導形狀 ${pill("torch/_library/custom_ops.py",41)}；Inductor 的隱式回退
+  ${pill("torch/_inductor/config.py",897)} ${pill("torch/_inductor/graph.py",1390)} 會自動把它包進
+  <code>FallbackKernel</code> ${pill("torch/_inductor/ir.py",8765)}：</p>
+  <pre class="diff"><span class="ctx"># skl_ops.py — 不改 PyTorch 原始碼</span><span class="add">import torch
+
+@torch.library.custom_op("skl::mm", mutates_args=())
+def skl_mm(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
+    return _skl_bindings.gemm(a, b)        # 你的 C 綁定
+
+@skl_mm.register_fake                       # 供 compile 推導形狀
+def _(a, b):
+    return a.new_empty(a.shape[0], b.shape[1])
+
+# 使用它——被遺漏的一步：必須有東西把這個運算放進圖裡。
+# 注意：與 A、B 不同，這會改到「你的模型程式碼」——'x @ w' 仍走原路；
+# 只有明確呼叫 torch.ops.skl.mm（或經由替換 pass）才會用到 SKL。
+def f(x, w):
+    return torch.relu(torch.ops.skl.mm(x, w))   # （或由 pre-grad pass 把 aten.mm 換成 skl.mm）</span></pre>
+  <p><b><code>torch.ops.skl.mm</code> 是從哪來的？</b><code>@custom_op("skl::mm")</code> 裝飾器的副作用就是把
+  運算<em>註冊</em>進 dispatcher；<code>torch.ops</code> 是動態命名空間，隨後把 <code>torch.ops.skl.mm</code>
+  解析到它。所以只要在 <code>torch.compile</code> 執行前<em>匯入</em>定義它的模組即可（之後載入編譯成品的行程
+  也要匯入）——不需要其他接線。</p>
+  <p><b>已在本 build 上實測驗證</b>（以 <code>torch.mm</code> 代替 SKL 綁定——無論主體是什麼，圖／wrapper 的
+  機制完全相同）。真實產生的 <code>call()</code>：</p>
+  <pre><span class="c"># 真實擷取輸出——重現：agent_space/skl_demo.py</span>
+<span class="c"># Topologically Sorted Source Nodes: [mm], Original ATen: [skl.mm]</span>
+buf0 = torch.ops.skl.mm.<span class="f">default</span>(arg0_1, arg1_1)   <span class="g"># 琥珀色呼叫——你的運算</span>
+...
+<span class="f">cpp_fused_relu_0</span>(buf2)                            <span class="g"># relu 仍在它周圍融合</span></pre>
+  <p class="mut"><b>取捨：</b>一個下午就能讓<em>任何</em>運算動起來——但語義是琥珀色的：融合屏障、沒有比賽，
+  而且只要你呼叫它就一定走它，不管快不快。先在這裡做原型，再升級到 A 或 B。</p>`},
+];
+const sklMapEl=document.getElementById("sklMap"),sklDetEl=document.getElementById("sklDetail");
+let curSkl=0;
+function renderSkl(){
+ const zh=isZh();
+ const att=(i,txt)=>`<div class="lat"><div class="latb" data-skl="${i}">${txt}</div></div>`;
+ const node=(cls,txt)=>`<div class="lnode ${cls}">${txt}</div>`;
+ const conn=(txt)=>`<div class="lrow"><div class="lcv">${txt}</div><div class="lat"></div></div>`;
+ const rows=[
+  `<div class="lrow">${node("",zh?"你的模型圖——pre-grad pass 在此執行":"your model's graph — pre-grad passes run here")}${att(2,zh?"<b>C&prime;</b> 樣式替換 aten.mm &rarr; skl.mm——整棵樹根本看不到 mm":"<b>C&prime;</b> pattern-swap aten.mm &rarr; skl.mm — the tree never sees an mm")}</div>`,
+  conn("&#9660;"),
+  `<div class="lrow">${node("dim",zh?"Q1 — 分解會觸發嗎？&rarr; decomposed":"Q1 — decomposition fires? &rarr; decomposed")}<div class="lat"></div></div>`,
+  conn(zh?"否 &#9660;":"no &#9660;"),
+  `<div class="lrow">${node("dim",zh?"Q2 — 迴圈層級 lowering？&rarr; <span style='color:var(--grn)'>fused</span>":"Q2 — loop-level lowering? &rarr; <span style='color:var(--grn)'>fused</span>")}<div class="lat"></div></div>`,
+  conn(zh?"否 &#9660;":"no &#9660;"),
+  `<div class="lrow">${node("q3",zh?"Q3 — extern lowering？&rarr; <b style='color:#79c0ff'>自動調校比賽（藍）</b>":"Q3 — extern lowering? &rarr; <b style='color:#79c0ff'>the autotune race (blue)</b>")}${att(1,zh?"<b>B</b> skl_mm 在此加入比賽":"<b>B</b> skl_mm joins the race here")}</div>`,
+  conn(zh?"否 &#9660;":"no &#9660;"),
+  `<div class="lrow">${node("fb",zh?"否則 make_fallback &rarr; <b style='color:var(--amb)'>eager 呼叫（琥珀）</b>":"otherwise make_fallback &rarr; <b style='color:var(--amb)'>eager call (amber)</b>")}${att(2,zh?"<b>C</b> torch.ops.skl.mm 落在這一階":"<b>C</b> torch.ops.skl.mm lands on this rung")}</div>`,
+  conn(zh?"每條分支最後都是一個呼叫 &#9660;":"every branch ends in a call &#9660;"),
+  `<div class="lrow">${node("floor",zh?"ATen dispatcher / BLAS 插槽——藍色<b>與</b>琥珀色的呼叫都落在這裡":"ATen dispatcher / BLAS slot — where blue <b>and</b> amber calls land")}${att(0,zh?"<b>A</b> 地板：接住一切（含 eager）":"<b>A</b> the floor — catches everything (eager too)")}</div>`,
+ ];
+ sklMapEl.innerHTML=`<div class="ladder">${rows.join("")}</div>`;
+ sklMapEl.querySelectorAll(".latb").forEach(b=>b.onclick=()=>selSkl(+b.dataset.skl));
+}
+function selSkl(i){curSkl=i;
+ sklMapEl.querySelectorAll(".latb").forEach(e=>e.classList.toggle("on",+e.dataset.skl===i));
+ sklDetEl.innerHTML=`<div class="hd" style="padding:11px 16px;background:#13202f;border-bottom:1px solid var(--line)"><span style="font-weight:700;font-size:15px">${pk(SKLOPT[i],"t")}</span> <span class="mut" style="font-size:12.5px">${pk(SKLOPT[i],"d")}</span></div><div style="padding:13px 17px">${pk(SKLOPT[i],"body")}</div>`;
+ sklDetEl.style.cssText="background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin:6px 0 4px;overflow:hidden";
+}
+renderSkl();selSkl(0);
+
+/* ---------- static prose translations (繁體中文) ---------- */
+const PROSE=Object.fromEntries([
+[`One idea, fully traced`,`一個觀念，完整追蹤`],
+[`Preface · the one idea`,`前言 · 那一個觀念`],
+[`1 · Where Inductor sits`,`1 · Inductor 的位置`],
+[`2 · One model, end to end`,`2 · 一個模型，端到端`],
+[`3 · The decision: will it fuse?`,`3 · 決策：它會融合嗎？`],
+[`4 · How fusion happens`,`4 · 融合如何發生`],
+[`5 · The generated program`,`5 · 產生出的程式`],
+[`6 · Dynamic shapes & caching`,`6 · 動態形狀與快取`],
+[`Appendix · catalogs & glossary`,`附錄 · 名冊與詞彙表`],
+[`Colophon · verify this book`,`版本說明 · 驗證本書`],
+[`Preface`,`前言`],[`Chapter 1`,`第 1 章`],[`Chapter 2`,`第 2 章`],[`Chapter 3`,`第 3 章`],
+[`Chapter 4`,`第 4 章`],[`Chapter 5`,`第 5 章`],[`Chapter 6`,`第 6 章`],[`Appendix`,`附錄`],[`Reference`,`參考`],
+[`The one idea`,`那一個觀念`],
+[`When you run torch.compile(model), PyTorch watches your model run once, writes the math down as a graph, and hands it to TorchInductor, which turns it into fast machine code. Here is the single idea this whole book hangs on: every operation in your model ends up as compiled code — the only question is who wrote that code, and when it was compiled. Inductor writes some of it fresh, specialized to your model (that's fusion, the speedup). The rest was written by humans years ago and shipped inside PyTorch (that's ATen). Everything else in this book is detail on that one decision.`,
+`當你執行 torch.compile(model)，PyTorch 會看著你的模型跑一次，把其中的數學記成一張圖，交給 TorchInductor，由它轉成快速的機器碼。本書懸掛其上的唯一觀念是：模型裡的每個運算最終都成為已編譯的程式碼——唯一的問題是<b>那段程式碼由誰寫成、何時編譯</b>。有些由 Inductor 現寫、針對你的模型特化（那就是「融合」，加速的來源）。其餘的由人類在多年前寫好、隨 PyTorch 出貨（那就是 ATen）。本書其餘一切，都只是這一個決策的細節。`],
+[`The three possible answers, color-coded — these colors mean the same thing on every diagram in this book:`,
+`三種可能的答案，以顏色標記——這些顏色在本書每張圖中含義一致：`],
+[`Who wrote the kernel`,`kernel 由誰寫成`],
+[`When compiled`,`何時編譯`],
+[`You'll see it as`,`你會看到它是`],
+[`Inductor, for your exact model`,`Inductor，為你的模型量身打造`],
+[`just now, while compiling`,`就在剛才，編譯期間`],
+[`a vendor library (oneDNN, BLAS, cuBLAS)`,`廠商函式庫（oneDNN、BLAS、cuBLAS）`],
+[`when the library was built`,`函式庫建置時`],
+[`PyTorch developers, by hand`,`PyTorch 開發者，人手寫成`],
+[`when PyTorch was built`,`PyTorch 建置時`],
+[`How to read this book Chapter 2 walks one real model through the whole compiler. Chapter 3 is an interactive decision tree — pick an op, watch it route. Chapter 5 is the centerpiece: a live map of the generated program where clicking the real code highlights the path it takes, and vice versa. Anything behind a ▶ is detail-on-demand — open it when you want depth. Every claim carries a pill like ir.py:1145 linking to the exact source line, pinned to the commit this book was verified against. The code shown is real captured output from an actual CPU build at that commit — not sketches.`,
+`如何閱讀本書 第 2 章帶一個真實模型走完整個編譯器。第 3 章是互動式決策樹——挑一個運算，看它選路。第 5 章是核心：產生程式的即時地圖——點真實程式碼會點亮它走的路徑，反之亦然。任何 ▶ 後面都是按需展開的細節。每個論述都帶有像 §torch/_inductor/ir.py:1145§ 這樣的藥丸，連到確切的原始碼行，固定在本書驗證所用的 commit。所示程式碼是該 commit 真實 CPU build 的<b>實際擷取輸出</b>——不是示意圖。`],
+[`Where Inductor sits`,`Inductor 的位置`],
+[`Inductor is the last stage of torch.compile. Upstream (Dynamo + AOTAutograd) has already flattened your Python into a clean list of tensor operations — an ATen FX graph. Inductor reads that list and emits a small program: a few freshly-written kernels, plus calls to prebuilt ones, plus a wrapper that runs them in order. Click each stage below.`,
+`Inductor 是 torch.compile 的最後一站。上游（Dynamo + AOTAutograd）已把你的 Python 攤平成一份乾淨的張量運算清單——ATen FX 圖。Inductor 讀這份清單，吐出一支小程式：幾個現寫的 kernel、加上對預建 kernel 的呼叫、再加一支依序執行它們的 wrapper。點下方各階段。`],
+[`The same flow as a call chain, for reading the source`,`同一流程的呼叫鏈版本，方便讀原始碼`],
+[`Forward and backward are split by AOTAutograd's partitioner (partition_fn compile_fx.py:2273); Inductor has no concept of "backward" — it just compiles whatever graph it's handed.`,
+`前向與反向由 AOTAutograd 的切割器分開（partition_fn §torch/_inductor/compile_fx.py:2273§）；Inductor 沒有「反向」的概念——它只是編譯交給它的任何一張圖。`],
+[`Map vs. territory Every diagram here is a teaching simplification of code that also handles caching, freezing, and cudagraphs. When a box disagrees with the source behind its pill, the source wins — that is the point of the pills.`,
+`地圖 vs. 真實地形 這裡每張圖都是教學上的簡化；真實程式碼還處理快取、freezing 與 cudagraphs。當某個方塊與藥丸背後的原始碼不符時，以原始碼為準——這正是藥丸存在的意義。`],
+[`One model, end to end`,`一個模型，端到端`],
+[`Let's compile the core of a transformer block — LayerNorm → Linear → GELU → Linear — and watch 14 ATen operations collapse into 4 calls: two kernels Inductor writes, two library matmuls it doesn't. Every artifact below is real captured output (CPU build, commit 0a327fa).`,
+`讓我們編譯 transformer 區塊的核心——LayerNorm → Linear → GELU → Linear——看著 14 個 ATen 運算塌縮成 4 個呼叫：兩個 Inductor 親手寫的 kernel，兩個它不寫的函式庫 matmul。下面每個產物都是真實擷取輸出（CPU build，commit 0a327fa）。`],
+[`decompose14 primitive ops arrive`,`<span class="badge b-step">分解</span>14 個基本運算抵達`],
+[`layer_norm is already split into var_mean + sub + add + rsqrt + 2×mul + add (7 ops), gelu into 2×mul + erf + add + mul (5 ops), and each @ w + b folded into one addmm (2 ops). Decompositions are chosen by select_decomp_table decomposition.py:972.`,
+`layer_norm 已被拆成 var_mean + sub + add + rsqrt + 2×mul + add（7 個運算），gelu 拆成 2×mul + erf + add + mul（5 個），每個 @ w + b 摺成一個 addmm（2 個）。分解由 select_decomp_table §torch/_inductor/decomposition.py:972§ 選定。`],
+[`The real post-grad graph (trimmed)`,`真實的 post-grad 圖（裁剪）`],
+[`lowerEach op becomes an IR node`,`<span class="badge b-step">降階</span>每個運算變成一個 IR 節點`],
+[`GraphLowering.run_node graph.py:1829 looks each op up in a dispatch table: var_mean → a Reduction; the elementwise chain → lazy Pointwise nodes; each addmm → an ExternKernel (it will call a library). Chapter 3 is this decision, interactive; Chapter 4 explains the node types.`,
+`GraphLowering.run_node §torch/_inductor/graph.py:1829§ 在分派表中查每個運算：var_mean → Reduction；逐元素鏈 → 延遲的 Pointwise 節點；每個 addmm → ExternKernel（它會呼叫函式庫）。第 3 章就是這個決策的互動版；第 4 章解釋節點型別。`],
+[`fuse12 of the 14 ops merge into 2 kernels`,`<span class="badge b-step">融合</span>14 個運算中的 12 個合併成 2 個 kernel`],
+[`The scheduler fuses everything that shares an iteration space: the 7 LayerNorm ops become cpp_fused_native_layer_norm_0, the 5 GELU ops become cpp_fused_gelu_1. The two addmms are fusion barriers and stay separate. How fusion decides: Chapter 4.`,
+`排程器把共用迭代空間的一切融合：7 個 LayerNorm 運算變成 cpp_fused_native_layer_norm_0，5 個 GELU 運算變成 cpp_fused_gelu_1。兩個 addmm 是融合屏障，保持獨立。融合如何決定：第 4 章。`],
+[`codegenInductor writes the two kernels`,`<span class="badge b-step">產生程式碼</span>Inductor 寫出這兩個 kernel`],
+[`Each fused group becomes one C++/OpenMP kernel. The GELU one, real and nearly complete — five ops, one in-place vectorized loop, no intermediate tensors:`,
+`每個融合群組成為一個 C++/OpenMP kernel。GELU 這個，真實且近乎完整——五個運算、一個就地向量化迴圈、零中間張量：`],
+[`The LayerNorm kernel — three real loop passes (mean, variance, normalize)`,`LayerNorm kernel——三個真實迴圈 pass（平均、變異數、正規化）`],
+[`Note what never exists: no buffer for x-mean, none for (x-mean)², no separate *gamma or +beta tensors — all in registers.`,
+`注意什麼從未存在：沒有 x-mean 的 buffer、沒有 (x-mean)² 的、沒有獨立的 *gamma 或 +beta 張量——全在暫存器裡。`],
+[`wrapA tiny program runs the four pieces`,`<span class="badge b-step">包裝</span>一支小程式執行這四個片段`],
+[`The wrapper — call(args) — allocates buffers and runs everything in dependency order. This artifact is the subject of Chapter 5, where it becomes an interactive map.`,
+`wrapper——call(args)——配置 buffer 並依相依順序執行一切。這個產物是第 5 章的主角，在那裡它變成一張互動地圖。`],
+[`What you just watched 14 ops → 4 calls. Inductor wrote 2 kernels (12 ops' worth of math, zero intermediate tensors) and delegated 2 matmuls to a library it trusts to be faster. That split — write it or delegate it — is the one idea from the preface, in action.`,
+`你剛剛看到的 14 個運算 → 4 個呼叫。Inductor 寫了 2 個 kernel（12 個運算份量的數學、零中間張量），並把 2 個 matmul 委派給它相信更快的函式庫。那個分野——自己寫，或是委派——正是前言那一個觀念的實際演出。`],
+[`The decision: will it fuse?`,`決策：它會融合嗎？`],
+[`For each op, Inductor asks three questions, in order. Pick an op and watch it route through the tree — the verdict shows exactly what that op becomes in the final program.`,
+`對每個運算，Inductor 依序問三個問題。挑一個運算，看它在樹中選路——判定欄會明確顯示這個運算在最終程式中變成什麼。`],
+[`Check any op yourself — the registries are the source of truth`,`自己驗證任一運算——登錄表才是真相來源`],
+[`The dispatch table is lowerings lowering.py:124 (filled by @register_lowering lowering.py:534); fallbacks are tagged and tracked in fallbacks lowering.py:129.`,
+`分派表是 lowerings §torch/_inductor/lowering.py:124§（由 @register_lowering §torch/_inductor/lowering.py:534§ 填入）；回退被打標並記錄在 fallbacks §torch/_inductor/lowering.py:129§。`],
+[`Most reliable check of all: read what was actually generated — TORCH_LOGS=output_code python your_script.py.`,
+`最可靠的檢查：直接讀實際產生了什麼——TORCH_LOGS=output_code python your_script.py。`],
+[`A gotcha we found by running it classify() checks decompositions first, so ops with conditional decompositions (mm, add) report DECOMPOSED even when the decomp doesn't fire. On a real build, relu(x @ w) emitted extern_kernels.mm and (x+1).sum() emitted one fused cpp_fused_add_sum_0. When the helper and output_code disagree, trust output_code.`,
+`實際執行後才發現的陷阱 classify() 先查分解表，所以帶條件式分解的運算（mm、add）即使分解未觸發也回報 DECOMPOSED。在真實 build 上，relu(x @ w) 產生了 extern_kernels.mm，(x+1).sum() 產生了一個融合的 cpp_fused_add_sum_0。當輔助函式與 output_code 不一致時，相信 output_code。`],
+[`How fusion happens`,`融合如何發生`],
+[`Why can Inductor weld 7 ops into one kernel? Because between the graph and the kernel, an op is not code yet — it's a recipe: a function that says how to compute one element. Fusing two ops is just composing their recipes. The art is keeping ops as recipes for as long as possible.`,
+`為什麼 Inductor 能把 7 個運算焊進一個 kernel？因為在圖與 kernel 之間，運算還不是程式碼——它是一份<b>食譜</b>：一個描述如何計算「一個元素」的函式。融合兩個運算，就只是把它們的食譜組合起來。這門藝術在於：讓運算盡可能久地保持為食譜。`],
+[`Lazy recipes vs. materialized tensors`,`延遲的食譜 vs. 已具現的張量`],
+[`A Pointwise node ir.py:1145 stores no tensor — it stores inner_fn(index), a Python function that, given loop indices, emits the scalar steps for one output element (ops.load, ops.add, …). A Reduction ir.py:1309 is the same with an accumulator. To fuse a producer into a consumer, Inductor literally passes the producer's inner_fn as the consumer's loader — function composition, nothing more. Only when a value must exist in memory does it become a ComputedBuffer ir.py:5178 — and fusion across that point is over.`,
+`Pointwise 節點 §torch/_inductor/ir.py:1145§ 不存任何張量——它存 inner_fn(index)：一個給定迴圈索引、為單一輸出元素發出純量步驟（ops.load、ops.add、…）的 Python 函式。Reduction §torch/_inductor/ir.py:1309§ 相同，只是多了累加器。要把生產者融進消費者，Inductor 真的就把生產者的 inner_fn 當作消費者的 loader 傳入——函式組合，僅此而已。只有當某個值必須存在於記憶體時，它才變成 ComputedBuffer §torch/_inductor/ir.py:5178§——跨越那一點的融合就此結束。`],
+[`The scheduler's two checks`,`排程器的兩項檢查`],
+[`The Scheduler scheduler.py:4028 repeatedly merges nodes (fuse_nodes scheduler.py:4986) asking two things: is it legal — the consumer reads exactly what the producer wrote, at the same index (can_fuse_vertical scheduler.py:7669), and no dependency cycle is created (scheduler.py:6455); and is it worth it — scored by memory traffic saved (score_fusion_memory scheduler.py:8071). An ExternKernel wrapped as an ExternKernelSchedulerNode scheduler.py:2138 is opaque — nothing fuses through it. That's why the two addmms in Chapter 2 bounded the fusion regions.`,
+`Scheduler §torch/_inductor/scheduler.py:4028§ 反覆合併節點（fuse_nodes §torch/_inductor/scheduler.py:4986§），問兩件事：<b>合法嗎</b>——消費者在相同索引處讀到的，正是生產者寫下的（can_fuse_vertical §torch/_inductor/scheduler.py:7669§），且不產生相依環（§torch/_inductor/scheduler.py:6455§）；<b>值得嗎</b>——以省下的記憶體流量計分（score_fusion_memory §torch/_inductor/scheduler.py:8071§）。被包成 ExternKernelSchedulerNode §torch/_inductor/scheduler.py:2138§ 的 ExternKernel 是不透明的——沒有東西能「穿過」它融合。這就是第 2 章兩個 addmm 圈出融合區域邊界的原因。`],
+[`The smallest possible demonstration: (x + 1).sum() → one kernel`,`最小可能的示範：(x + 1).sum() → 一個 kernel`],
+[`The Pointwise (+1) feeds the Reduction (sum) at the same indices — textbook vertical fusion into one FusedSchedulerNode scheduler.py:2616. Real captured kernel — the +1 lives inside the reduction loop, and the 1024×1024 intermediate is never allocated:`,
+`Pointwise（+1）在相同索引處餵給 Reduction（sum）——教科書式的垂直融合，併成一個 FusedSchedulerNode §torch/_inductor/scheduler.py:2616§。真實擷取的 kernel——+1 活在歸約迴圈<em>裡面</em>，那個 1024×1024 的中間值從未被配置：`],
+[`And its whole wrapper: one allocation, one kernel call:`,`而它的整個 wrapper：一次配置、一次 kernel 呼叫：`],
+[`Reference: the IR node hierarchy and scheduler node zoo`,`參考：IR 節點階層與 scheduler 節點動物園`],
+[`IR node`,`IR 節點`],[`Means`,`意義`],[`Source`,`原始碼`],
+[`lazy recipes (inner_fn + ranges) — fusible`,`延遲的食譜（inner_fn + ranges）——可融合`],
+[`materialized in memory; ComputedBuffer = recipe + layout`,`已具現於記憶體；ComputedBuffer = 食譜 + 排佈`],
+[`calls out instead of lowering to loops; fusion barrier`,`對外呼叫而非降階成迴圈；融合屏障`],
+[`indirection so views share storage; realize() materializes`,`間接層使 view 共享儲存；realize() 進行具現`],
+[`Scheduler node`,`Scheduler 節點`],
+[`one fusible op`,`一個可融合運算`],
+[`several welded into one kernel`,`數個焊成一個 kernel`],
+[`opaque extern call — the barrier`,`不透明的 extern 呼叫——屏障本體`],
+[`Dependencies are tracked as indexed reads/writes (MemoryDep dependencies.py:76) in each node's ReadWrites dependencies.py:432.`,
+`相依以「帶索引的讀/寫」追蹤（MemoryDep §torch/_inductor/dependencies.py:76§），存於各節點的 ReadWrites §torch/_inductor/dependencies.py:432§。`],
+[`The generated program — a live map`,`產生出的程式——一張即時地圖`],
+[`This is what Inductor ultimately hands back: a function named call(args) that allocates buffers and fires kernels. Left: the real captured wrapper from Chapter 2's model (plus one extra line from another run, to show all three forms). Right: the map of where each kind of call goes. Click any call on the left, or any column on the right — both light up, and the panel below explains that path down to the machine code.`,
+`這就是 Inductor 最終交回的東西：一個名為 call(args) 的函式，配置 buffer 並啟動 kernel。左邊：第 2 章模型的真實擷取 wrapper（外加另一次執行的一行，湊齊三種形態）。右邊：各種呼叫去向的地圖。<b>點左邊任一呼叫，或右邊任一欄</b>——兩邊同時點亮，下方面板把那條路徑一路解釋到機器碼。`],
+[`All three paths end in compiled C++ — the difference is who wrote it and when it was compiled. Green: Inductor, just now, for your shapes. Blue and amber: prebuilt — blue won a race to be there, amber had no rival.`,
+`三條路徑最後都是已編譯的 C++——差別在於由誰寫成、何時編譯。綠色：Inductor、就在剛才、為你的形狀。藍色與琥珀色：預建——藍色是贏了比賽才站在那裡，琥珀色是根本沒有對手。`],
+[`Where call() itself comes from`,`call() 本身從哪來`],
+[`The wrapper is assembled by PythonWrapperCodegen wrapper.py:1257: the name "call" is fixed at wrapper.py:1378, each kernel call is queued during scheduling as a KernelCallLine wrapper.py:701 (extern calls: wrapper.py:633), and generate() wrapper.py:2120 renders the final source, which is compiled to a module whose call you invoke. For AOTInductor deployment a C++ wrapper replaces the Python one (cpp_wrapper_cpu.py:254).`,
+`wrapper 由 PythonWrapperCodegen §torch/_inductor/codegen/wrapper.py:1257§ 組裝：名稱 "call" 固定於 §torch/_inductor/codegen/wrapper.py:1378§，每個 kernel 呼叫在排程期間以 KernelCallLine §torch/_inductor/codegen/wrapper.py:701§ 排入（extern 呼叫：§torch/_inductor/codegen/wrapper.py:633§），generate() §torch/_inductor/codegen/wrapper.py:2120§ 算繪出最終原始碼，編譯成模組後，你呼叫的就是它的 call。AOTInductor 部署時，C++ wrapper 取代 Python 版（§torch/_inductor/codegen/cpp_wrapper_cpu.py:254§）。`],
+[`What "hand-written" really means — the three layers behind an eager ATen kernel`,`「手寫」的真正含義——eager ATen kernel 背後的三個層次`],
+[`Take the amber example, aten._cdist_forward. "The eager kernel" is three layers:`,
+`以琥珀色的例子 aten._cdist_forward 來說。「eager kernel」其實是三層：`],
+[`The body (the math) — hand-written C++: native::_cdist_forward Distance.cpp:183, with AT_DISPATCH_FLOATING_TYPES DistanceOpsKernel.cpp:431 stamping the same lambda per dtype, and TensorIterator/Loops.h supplying iteration, broadcasting, and at::vec vectorization for simpler ops.`,
+`主體（數學）——手寫 C++：native::_cdist_forward §aten/src/ATen/native/Distance.cpp:183§，由 AT_DISPATCH_FLOATING_TYPES §aten/src/ATen/native/cpu/DistanceOpsKernel.cpp:431§ 依 dtype 鑄出同一個 lambda；更簡單的運算則由 TensorIterator/Loops.h 提供迭代、廣播與 at::vec 向量化。`],
+[`The plumbing — generated at PyTorch build time: the op is declared in native_functions.yaml:4441 (yaml, not C++); torchgen generates the dispatcher registration, at:: API, Python bindings, and autograd glue.`,
+`管線——在 PyTorch 建置時生成：運算宣告於 §aten/src/ATen/native/native_functions.yaml:4441§（yaml，不是 C++）；torchgen 生成 dispatcher 註冊、at:: API、Python 綁定與 autograd 黏合碼。`],
+[`Some bodies are just library calls — eager aten::mm is essentially "call BLAS/oneDNN," which is why blue and amber converge in spirit.`,
+`有些主體就只是函式庫呼叫——eager 的 aten::mm 本質上是「呼叫 BLAS/oneDNN」，這也是藍色與琥珀色殊途同歸的原因。`],
+[`Extending the map: plugging in a new vendor library (e.g., SKL on RISC-V)`,`擴充這張地圖：接上新的廠商函式庫（例如 RISC-V 上的 SKL）`],
+[`Suppose you have a vendor kernel library — say SKL for RISC-V — and want compiled models to use it. The map above does not change; you choose which node to plug into. Because blue and amber both end in ATen, there are three attachment points:`,
+`假設你有一套廠商 kernel 函式庫——比如 RISC-V 上的 SKL——想讓編譯後的模型使用它。上面的地圖不會改變；你要選的是<b>接到哪個節點</b>。因為藍色與琥珀色最終都落在 ATen，所以有三個接入點：`],
+[`Attach at`,`接入點`],
+[`How`,`作法`],
+[`What you get`,`你得到什麼`],
+[`A — below the dispatcher (inside ATen)`,`A — dispatcher 之下（ATen 內部）`],
+[`If SKL speaks the BLAS API: PyTorch's BLAS slot is build-time pluggable — aten::mm → cpublas::gemm CPUBlas.cpp:152 → cblas_*gemm, library chosen in cmake Dependencies.cmake:198. Otherwise register SKL kernels for existing aten ops via TORCH_LIBRARY_IMPL(aten, CPU, ...).`,
+`若 SKL 講 BLAS API：PyTorch 的 BLAS 插槽在建置時可替換——aten::mm → cpublas::gemm §aten/src/ATen/native/CPUBlas.cpp:152§ → cblas_*gemm，函式庫由 cmake 選定 §cmake/Dependencies.cmake:198§。否則用 TORCH_LIBRARY_IMPL(aten, CPU, ...) 為既有 aten 運算註冊 SKL kernel。`],
+[`Zero Inductor changes — blue and amber both land in SKL automatically, eager mode too. SKL replaces the default instead of racing it.`,
+`Inductor 零改動——藍色與琥珀色自動都落到 SKL，eager 模式也是。SKL 是「取代」預設，而非與之比賽。`],
+[`B — a new blue contestant`,`B — 一個新的藍色參賽者`],
+[`Wrap SKL as a custom op, create an ExternKernelChoice select_algorithm.py:3072, append it beside aten_handler in tuned_mm mm.py:409.`,
+`把 SKL 包成自訂運算，建立一個 ExternKernelChoice §torch/_inductor/select_algorithm.py:3072§，在 tuned_mm 中把它加到 aten_handler 旁 §torch/_inductor/kernel/mm.py:409§。`],
+[`SKL races ATen and templates under autotuning — the stopwatch picks per shape. Appears as extern_kernels.skl_mm. Per-op work.`,
+`SKL 在自動調校下與 ATen 及樣板比賽——碼錶逐形狀挑贏家。以 extern_kernels.skl_mm 出現。需逐運算接線。`],
+[`C — a new amber-style entry`,`C — 一個新的琥珀色式條目`],
+[`Define torch.ops.skl.* and call it (or pattern-swap aten ops to it); implicit_fallbacks config.py:897 graph.py:1390 wraps unknown ops automatically.`,
+`定義 torch.ops.skl.* 並呼叫它（或用樣式比對把 aten 運算換成它）；implicit_fallbacks §torch/_inductor/config.py:897§ §torch/_inductor/graph.py:1390§ 會自動包裝未知運算。`],
+[`Fastest prototype, any op — but a fusion barrier and no race. Note it appears as torch.ops.skl.*, not torch.ops.aten.*.`,
+`最快的原型路徑、任何運算皆可——但它是融合屏障、也沒有比賽。注意它以 torch.ops.skl.* 出現，而非 torch.ops.aten.*。`],
+[`And the piece that connects body to plumbing: torch::CppFunction. It is the registration envelope, not the kernel: m.impl(...) wraps your function into a CppFunction library.h:107, which holds a type-erased c10::KernelFunction library.h:298 plus the dispatch key library.h:297 — the dispatcher's filing card. Proof it isn't "the hand-written kernel": the same envelope carries torchgen's generated wrapper_CPU_mm_out_out, and CppFunction::makeFallthrough() library.h:229 contains no kernel at all. One line: the kernel is the letter, CppFunction is the envelope, the dispatch table is the mailbox.`,
+`<b>連接「主體」與「管線」的那個零件：<code>torch::CppFunction</code>。</b>它是註冊用的<em>信封</em>，不是 kernel 本身：<code>m.impl(...)</code> 會把你的函式包進一個 <code>CppFunction</code> §torch/library.h:107§，裡面裝著型別抹除的 <code>c10::KernelFunction</code> §torch/library.h:298§ 與分派鍵 §torch/library.h:297§——這是 dispatcher 的歸檔卡。證明它不是「手寫 kernel」：同一個信封也裝著 torchgen <em>生成的</em> <code>wrapper_CPU_mm_out_out</code>；而 <code>CppFunction::makeFallthrough()</code> §torch/library.h:229§ 裡面根本沒有 kernel。一句話：<b>kernel 是信、<code>CppFunction</code> 是信封、分派表是信箱。</b>`],
+[`So PyTorch has three code-writing moments: humans (once, in the repo) write kernel bodies; torchgen (at PyTorch build time) writes the plumbing; Inductor (at torch.compile time) writes fused kernels. Eager PyTorch is already partly a code-generation system — Inductor moved codegen from build time to compile time, and from the plumbing into the kernels themselves.`,
+`所以 PyTorch 有三個「寫程式碼的時刻」：人類（一次性，寫進 repo）寫 kernel 主體；torchgen（PyTorch 建置時）寫管線；Inductor（torch.compile 時）寫融合 kernel。Eager PyTorch 本身已部分是程式碼生成系統——Inductor 只是把生成從建置時搬到編譯時，並從管線搬進 kernel 本身。`],
+[`Dynamic shapes & caching`,`動態形狀與快取`],
+[`One compile can serve many input sizes: Inductor keeps sizes symbolic (s0, s1…) and inserts cheap guards — runtime checks that trigger a recompile when an assumption breaks. And because compiling is expensive, everything is cached so the second run is instant.`,
+`一次編譯可服務多種輸入大小：Inductor 讓尺寸保持符號化（s0、s1…），並插入廉價的 guard——當假設失效時觸發重新編譯的執行期檢查。又因編譯昂貴，一切都被快取，第二次執行即時完成。`],
+[`Symbolic sizes are managed by SizeVarAllocator sizevars.py:243 (guard_int sizevars.py:957 pins a symbol to a concrete value when it must). The FxGraphCache short-circuits the whole pipeline on a hit, at _compile_fx_inner compile_fx.py:846; below it, compiled kernels are cached on disk.`,
+`符號化尺寸由 SizeVarAllocator §torch/_inductor/sizevars.py:243§ 管理（guard_int §torch/_inductor/sizevars.py:957§ 在必要時把符號釘到具體值）。FxGraphCache 在命中時直接短路整條管線，位於 _compile_fx_inner §torch/_inductor/compile_fx.py:846§；其下，已編譯的 kernel 快取於磁碟。`],
+[`Data-dependent sizes (the count nonzero returns) can't be guarded — that's one reason such ops live on the amber path in Chapter 5's map.`,
+`依資料而定的大小（如 nonzero 回傳的數量）無法被 guard——這是這類運算落在第 5 章地圖琥珀色路徑上的原因之一。`],
+[`7 · Extending: plug in SKL`,`7 · 擴充：接上 SKL`],
+[`Chapter 7`,`第 7 章`],
+[`Want to plug your own library into this map (a new vendor backend)? That is Chapter 7.`,
+`想把你<em>自己的</em>函式庫接上這張地圖（新的廠商後端）？請看<a href="#extend">第 7 章</a>。`],
+[`Extending the map: plugging in SKL (RISC-V)`,`擴充這張地圖：接上 SKL（RISC-V）`],
+[`Suppose you have a vendor kernel library — SKL for RISC-V — and want compiled models to use it. Nothing about Chapter 5's map changes; you choose which node to plug into. Because the blue and amber paths both end in ATen, there are three attachment points — shown below on Chapter 3's routing ladder, top to bottom. The pink chips are the attachment points — click one for the path it modifies and the actual patch.`,
+`假設你有一套廠商 kernel 函式庫——RISC-V 上的 <b>SKL</b>——想讓編譯後的模型使用它。第 5 章的地圖完全不變；你要選的是<b>接到哪個節點</b>。因為藍色與琥珀色路徑最終都落在 ATen，所以有三個接入點——下方以第 3 章的路由階梯由上而下標示。<b>粉色籌片就是接入點——點一個</b>，看它修改的路徑與實際補丁。`],
+[`Priority — how the three relate`,`優先順序——三者的關係`],
+[`Same op, earlier rung wins. mm resolves at Q3, so B's race fires and the amber rung is never consulted — for ops it covers, B has priority over C.`,
+`<b>同一個運算，越早的階梯越優先。</b><code>mm</code> 在 Q3 就被決定，B 的比賽因此開打，琥珀色那一階根本不會被問到——對 B 涵蓋的運算，B 優先於 C。`],
+[`A is orthogonal — it has no rung. It sits below every branch and catches whatever arrives, blue or amber, compiled or eager. "Priority" doesn't apply to the floor.`,
+`<b>A 是正交的——它沒有階梯位置。</b>它位於所有分支之下，接住任何到來的呼叫：藍色或琥珀色、編譯或 eager。「優先順序」對地板不適用。`],
+[`C as a graph rewrite (C′) preempts everything. Swapping aten.mm → torch.ops.skl.mm happens before the tree runs, so Q3 never sees an mm. Priority ultimately belongs to whoever edits the graph first.`,
+`<b>把 C 當作圖改寫（C′）則先發制人。</b>把 <code>aten.mm &rarr; torch.ops.skl.mm</code> 的替換發生在樹執行<em>之前</em>，Q3 根本看不到 <code>mm</code>。優先權終究屬於最先動到圖的人。`],
+[`Stacking A + B makes the race SKL vs SKL — with A wired, aten_mm already lands in SKL, so B only wins by wrapper overhead. Choose deliberately rather than stacking.`,
+`<b>同時疊上 A + B，比賽會變成 SKL 對 SKL</b>——接好 A 之後，<code>aten_mm</code> 本來就落在 SKL，B 只能靠包裝層的開銷差距取勝。請刻意擇一，而非疊加。`],
+[`Which one, when`,`何時選哪一個`],
+[`Approach`,`做法`],
+[`PyTorch changes`,`PyTorch 改動`],
+[`Competes or replaces?`,`競爭還是取代？`],
+[`Covers`,`涵蓋範圍`],
+[`Shows up in call() as`,`在 call() 中呈現為`],
+[`A — below the dispatcher`,`A — dispatcher 之下`],
+[`none (build flag) or an out-of-tree override`,`無（建置旗標）或樹外覆寫`],
+[`replaces the default`,`取代預設`],
+[`every op SKL implements, eager too`,`SKL 實作的每個運算，含 eager`],
+[`B — new blue contestant`,`B — 新的藍色參賽者`],
+[`small mm.py patch + a custom op`,`小幅 mm.py 補丁 + 一個自訂運算`],
+[`competes — autotuned per shape`,`競爭——逐形狀自動調校`],
+[`each op you wire (GEMM family)`,`你接線的每個運算（GEMM 家族）`],
+[`C — new amber entry`,`C — 新的琥珀色條目`],
+[`none — out-of-tree op`,`無——樹外運算`],
+[`neither — always taken where called`,`皆非——呼叫到就一定走它`],
+[`any op you call — model code must change (or a swap pass)`,`你呼叫的任何運算——<b>必須改模型程式碼</b>（或用替換 pass）`],
+[`Rule of thumb: BLAS-compatible → start at A (one build flag; broadest reach). Want SKL to compete per shape instead of replace → B. Prototyping or non-GEMM ops → C, then graduate. The green path needs nothing — cpp_fused_* kernels compile with your RISC-V toolchain regardless (vector quality depends on at::vec RVV support).`,
+`經驗法則：BLAS 相容 → 從 <b>A</b> 開始（一個建置旗標；覆蓋最廣）。想讓 SKL 逐形狀「競爭」而非「取代」→ <b>B</b>。做原型或非 GEMM 運算 → 先 <b>C</b>，再升級。綠色路徑什麼都不需要——cpp_fused_* kernel 無論如何都由你的 RISC-V 工具鏈編譯（向量化品質取決於 at::vec 對 RVV 的支援）。`],
+[`What's real in these patches, and what isn't The green + lines are the integration you would write — SKL is hypothetical here (its API was not verified, and nothing was tested on RISC-V). Everything else is real at the pinned commit: every context line, every pill, and the mechanisms the patches lean on (BLAS=Generic, ExternKernelChoice, implicit_fallbacks). Exceptions: approaches C, A2, and B were all executed live on this build with stand-in kernel bodies — C produced the call() on its card; A2's override was compiled, loaded, and verified via _dispatch_dump; B's patch was applied (then reverted), raced, and emitted extern_kernels.skl_mm — each card carries its captured output. Only A1 (the BLAS rebuild) remains unapplied.`,
+`這些補丁中哪些是真的、哪些不是 <span style="color:var(--grn)">綠色 +</span> 的行是<em>你要寫的</em>整合內容——SKL 在此是假設性的（其 API 未經驗證，也未在 RISC-V 上測試）。其餘一切在固定 commit 上皆為真：每一行 context、每個藥丸、以及補丁倚賴的機制（BLAS=Generic、ExternKernelChoice、implicit_fallbacks）。例外：做法 <b>C、A2 與 B 全都已在本 build 上以替身 kernel 主體實際執行</b>——C 產出其卡片上的 call()；A2 的覆寫經過編譯、載入並以 _dispatch_dump 驗證；B 的補丁套用（隨後還原）、參賽，並產出 extern_kernels.skl_mm——各卡片都載有其擷取輸出。只剩 A1（BLAS 重建）尚未套用。`],
+[`Catalogs & glossary`,`名冊與詞彙表`],
+[`Reference material — deliberately out of the main flow.`,`參考資料——刻意放在主線之外。`],
+[`The full extern_kernels.* menu (23 on this build) — the blue path's roster`,`完整的 extern_kernels.* 清單（此 build 上 23 個）——藍色路徑的名冊`],
+[`Every name is registered by an ExternKernelChoice via setattr select_algorithm.py:3101. Triton/CUTLASS are separate templates — never extern_kernels.*.`,
+`每個名稱都由 ExternKernelChoice 經 setattr §torch/_inductor/select_algorithm.py:3101§ 登錄。Triton/CUTLASS 是另外的樣板——永遠不是 extern_kernels.*。`],
+[`Family`,`類別`],[`Names`,`名稱`],
+[`Dense matmul`,`稠密 matmul`],[`Batched / grouped`,`批次 / 分組`],[`FP8 / int / sparse`,`FP8 / 整數 / 稀疏`],
+[`Convolution`,`卷積`],[`oneDNN fused linear`,`oneDNN 融合 linear`],
+[`Regenerate: sorted(n for n in dir(extern_kernels) if not n.startswith("__")).`,
+`重新產生：sorted(n for n in dir(extern_kernels) if not n.startswith("__"))。`],
+[`The full torch.ops.aten.* fallback menu (357 overloads, ~130 ops) — the amber path's roster`,`完整的 torch.ops.aten.* 回退清單（357 個 overload、約 130 個運算）——琥珀色路徑的名冊`],
+[`All registered by make_fallback lowering.py:2728, tracked in fallbacks lowering.py:129.`,
+`全部由 make_fallback §torch/_inductor/lowering.py:2728§ 登錄，記錄於 fallbacks §torch/_inductor/lowering.py:129§。`],
+[`Examples`,`範例`],[`Why ATen`,`為何 ATen`],
+[`Linear algebra (52)`,`線性代數（52）`],[`LAPACK/cuSOLVER kernels`,`LAPACK/cuSOLVER kernel`],
+[`Attention (17)`,`Attention（17）`],[`fused library kernels`,`融合式函式庫 kernel`],
+[`Random (42)`,`隨機（42）`],[`stateful RNG`,`帶狀態的 RNG`],
+[`Data-dependent shape (19)`,`形狀依資料而定（19）`],[`output size unknown until runtime`,`輸出大小要到執行期才知道`],
+[`Backward of pooling/upsample (26)`,`池化/upsample 的反向（26）`],[`complex backward kernels`,`複雜的反向 kernel`],
+[`Special functions (~120)`,`特殊函式（約 120）`],[`rare math, bulk-registered`,`罕用數學，批量註冊`],
+[`FFT, RNN, sparse, distance, misc`,`FFT、RNN、稀疏、距離、其他`],[`no loop-level lowering`,`無迴圈層級降階`],
+[`Count is inflated by per-overload entries. Regenerate: sorted(str(op) for op in torch._inductor.lowering.fallbacks).`,
+`數字被逐 overload 計數灌大。重新產生：sorted(str(op) for op in torch._inductor.lowering.fallbacks)。`],
+[`Glossary`,`詞彙表`],
+[`Colophon & how to verify this book`,`版本說明與如何驗證本書`],
+[`Pinned to commit 0a327fa9ec5 of pytorch/pytorch. Every pill is a permalink at that commit; line numbers drift, so on newer checkouts search for the named symbol instead. All generated code shown is real captured output from a CPU-only build at this commit (USE_CUDA=0; oneDNN v3.12.0, USE_MKL=OFF, Eigen BLAS — confirm with torch.__config__.show()), dumped via TORCH_LOGS=output_code. GPU/Triton kernels were not captured on this build; Triton claims are anchored to source only.`,
+`固定在 pytorch/pytorch 的 commit 0a327fa9ec5。每個藥丸都是該 commit 的永久連結；行號會漂移，在較新的 checkout 上請改搜尋指名的符號。所示的產生程式碼全是此 commit 純 CPU build 的真實擷取輸出（USE_CUDA=0；oneDNN v3.12.0、USE_MKL=OFF、Eigen BLAS——用 torch.__config__.show() 確認），由 TORCH_LOGS=output_code 傾印。此 build 未擷取 GPU/Triton kernel；Triton 相關論述僅錨定原始碼。`],
+[`Reproduce the artifacts`,`重現這些產物`],
+[`If anything disagrees with what these commands show, the source wins — that's the point of anchoring every claim.`,
+`若任何內容與這些指令顯示的不符，以原始碼為準——這正是為每個論述錨定出處的意義。`],
+]);
+const PROSE_SEL="main p, main li, main h2, main h3, main h4, main summary, main dt, main dd, main td, main th, main .lead, main .note, main .ch, main .step .h, nav.toc a, nav.toc .sub";
+let proseEls=null;
+function translateProse(zh){
+ if(!proseEls){
+  proseEls=[...document.querySelectorAll(PROSE_SEL)].filter(el=>
+   !el.closest("pre, .src, #pipe, #stageDetail, #dchips, #dtreeBox, #dverdict, #bigCode, #bigMap, #bigDetail, #glossaryList, #sklMap, #sklDetail"));
+  proseEls.forEach(el=>{el.__en=el.innerHTML;el.__key=(el.textContent||"").replace(/\s+/g," ").trim();});
+ }
+ proseEls.forEach(el=>{
+  const t=zh&&PROSE[el.__key];
+  el.innerHTML=t?t.replace(/§([^:§]+):(\d+)§/g,(m,p,l)=>pill(p,l)):el.__en;
+ });
+}
+function setLang(l){
+ document.documentElement.dataset.lang=l;
+ try{localStorage.setItem("ti1-lang",l);}catch(e){}
+ document.getElementById("langToggle").textContent=(l==="zh")?"EN":"繁中";
+ document.documentElement.lang=(l==="zh")?"zh-Hant":"en";
+ renderPipe();selStage(curStage);
+ if(curOp!==null)selOp(curOp);else{renderTree(null);dverdictDefault();}
+ renderMap();selForm(curForm);
+ renderSkl();selSkl(curSkl);
+ renderGloss();
+ translateProse(l==="zh");
+}
+document.getElementById("langToggle").onclick=()=>setLang(document.documentElement.dataset.lang==="zh"?"en":"zh");
+(function(){let s="en";try{s=localStorage.getItem("ti1-lang")||"en";}catch(e){}if(s==="zh")setLang("zh");})();
+
+/* ---------- scroll spy ---------- */
+const links=[...document.querySelectorAll("nav.toc a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href"))).filter(Boolean);
+const spy=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const id="#"+e.target.id;
+ links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")===id));}});},
+ {rootMargin:"-10% 0px -80% 0px"});
+secs.forEach(s=>spy.observe(s));
+</script>
+</body>
+</html>

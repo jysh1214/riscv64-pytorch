@@ -1,0 +1,85 @@
+/home/alex/pytorch/torch/_dynamo/pgo.py:605: UserWarning: dynamo_pgo force disabled by torch.compiler.config.force_disable_caches
+  warn_once(
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] Output code:
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] # AOT ID: ['0_inference']
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from ctypes import c_void_p, c_long, c_int
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] import torch
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] import math
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] import random
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] import os
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] import tempfile
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from math import inf, nan
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from cmath import nanj
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from torch._inductor.hooks import run_intermediate_hooks
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from torch._inductor.utils import maybe_profile
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from torch._inductor.codegen.memory_planning import _align as align
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from torch import device, empty_strided
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from torch._inductor.async_compile import AsyncCompile
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] from torch._inductor.select_algorithm import extern_kernels
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] aten = torch.ops.aten
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] inductor_ops = torch.ops.inductor
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] _quantized = torch.ops._quantized
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] assert_size_stride = torch._C._dynamo.guards.assert_size_stride
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] assert_alignment = torch._C._dynamo.guards.assert_alignment
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] empty_strided_cpu = torch._C._dynamo.guards._empty_strided_cpu
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] empty_strided_cpu_pinned = torch._C._dynamo.guards._empty_strided_cpu_pinned
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] empty_strided_cuda = torch._C._dynamo.guards._empty_strided_cuda
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] empty_strided_xpu = torch._C._dynamo.guards._empty_strided_xpu
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] empty_strided_mtia = torch._C._dynamo.guards._empty_strided_mtia
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] reinterpret_tensor = torch._C._dynamo.guards._reinterpret_tensor
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] alloc_from_pool = torch.ops.inductor._alloc_from_pool
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] async_compile = AsyncCompile()
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] empty_strided_p2p = torch._C._distributed_c10d._SymmetricMemory.empty_strided_p2p
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] async_compile.wait(globals())
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] del async_compile
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] class Runner:
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     def __init__(self, partitions):
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         self.partitions = partitions
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     def recursively_apply_fns(self, fns):
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         new_callables = []
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         for fn, c in zip(fns, self.partitions):
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]             new_callables.append(fn(c))
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         self.partitions = new_callables
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     def call(self, args):
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         arg0_1, arg1_1 = args
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         args.clear()
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         assert_size_stride(arg0_1, (256, 256), (256, 1), 'input')
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         assert_size_stride(arg1_1, (256, 256), (256, 1), 'input')
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         # Topologically Sorted Source Nodes: [matmul], Original ATen: [aten.mm]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         buf0 = extern_kernels.skl_mm(arg0_1, arg1_1)
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         assert_size_stride(buf0, (256, 256), (256, 1), 'torch.ops.aten.mm.default')
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         del arg0_1
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         del arg1_1
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]         return (buf0, )
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] runner = Runner(partitions=[])
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] call = runner.call
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] recursively_apply_fns = runner.recursively_apply_fns
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] def get_args():
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     from torch._dynamo.testing import rand_strided
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     arg0_1 = rand_strided((256, 256), (256, 1), device='cpu', dtype=torch.float32)
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     arg1_1 = rand_strided((256, 256), (256, 1), device='cpu', dtype=torch.float32)
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     return [arg0_1, arg1_1]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] def benchmark_compiled_module(args, times=10, repeat=10):
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     from torch._inductor.utils import print_performance
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     fn = lambda: call(list(args))
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     return print_performance(fn, times=times, repeat=repeat, device='cpu')
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code] if __name__ == "__main__":
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     from torch._inductor.wrapper_benchmark import compiled_module_main
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     args = get_args()
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]     compiled_module_main('None', lambda times, repeat: benchmark_compiled_module(args, times=times, repeat=repeat))
+V0610 22:46:43.804000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2739] [0/0] [__output_code]
+V0610 22:46:43.805000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2750] [0/0] [__output_code] Output code written to: /tmp/torchinductor_alex/tmpl0087vgi/6w/c6w4fiicslhq4cxolhhpea4ako5jdqcjo5l3d3h3idisualbk2ca.py
+I0610 22:46:43.807000 283288 /home/alex/pytorch/torch/_inductor/graph.py:2710] [0/0] [__output_code] Output code written to: /tmp/torchinductor_alex/tmpl0087vgi/6w/c6w4fiicslhq4cxolhhpea4ako5jdqcjo5l3d3h3idisualbk2ca.py
