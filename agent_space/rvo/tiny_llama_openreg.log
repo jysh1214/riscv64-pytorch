@@ -1,0 +1,3 @@
+forward: logits.device=openreg:0  shape=(1, 8, 320)
+generated ids: [281, 71, 25, 158, 302, 193, 229, 100, 209, 123, 188, 7, 273]
+OK: TinyLlama (607K params) ran on device 'openreg' via minimal backend 'torch_openreg'

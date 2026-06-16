@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register a New Device — The Minimum-Effort Path</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --ink:#e6edf3; --mut:#9aa7b4;
+    --line:#2b333d; --acc:#58a6ff; --grn:#7ee787; --amb:#f0b429; --pink:#ff7b9c;
+    --code:#0b0f14; --pill:#21303f; --shadow:0 6px 24px rgba(0,0,0,.35); --maxw:960px;
+  }
+  *{box-sizing:border-box} html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:16px/1.62 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  code,pre,.mono{font-family:"SF Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .layout{display:grid;grid-template-columns:272px 1fr;min-height:100vh}
+  nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;
+    border-right:1px solid var(--line);background:#0b0e13;padding:22px 14px}
+  nav.toc h1{font-size:15px;margin:0 0 3px} nav.toc .sub{color:var(--mut);font-size:12px;margin-bottom:16px}
+  nav.toc a{display:block;color:var(--mut);padding:5px 10px;border-radius:7px;font-size:13.5px}
+  nav.toc a:hover{background:var(--panel);color:var(--ink);text-decoration:none}
+  nav.toc a.active{background:var(--pill);color:var(--ink)}
+  main{max-width:var(--maxw);margin:0 auto;padding:44px 32px 120px;width:100%}
+  section{scroll-margin-top:18px;padding-top:24px}
+  h2{font-size:26px;margin:8px 0 2px;line-height:1.2}
+  h3{font-size:18.5px;margin:28px 0 6px}
+  h4{font-size:15.5px;margin:18px 0 4px}
+  .ch{color:var(--acc);font-size:12.5px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase}
+  p{margin:10px 0} .mut{color:var(--mut)}
+  .hr{height:1px;background:var(--line);margin:32px 0;border:0}
+  ul,ol{margin:10px 0;padding-left:22px} li{margin:5px 0}
+  .lead{font-size:17.5px;line-height:1.6;background:linear-gradient(90deg,rgba(88,166,255,.08),rgba(88,166,255,0));
+    border-left:3px solid var(--acc);padding:13px 17px;border-radius:0 10px 10px 0;color:#dce6f0;margin:14px 0 6px}
+  .lead b{color:#fff}
+  .src{display:inline-flex;align-items:center;gap:5px;background:var(--pill);border:1px solid #2c3e50;
+    color:#9fd0ff;border-radius:6px;padding:1px 7px;font:600 11.5px/1.6 "SF Mono",ui-monospace,monospace;
+    white-space:nowrap;vertical-align:baseline}
+  .src:hover{background:#243748;text-decoration:none;border-color:var(--acc)}
+  .src::before{content:"\1F517";font-size:10px;opacity:.7}
+  pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:13px 15px;overflow:auto;
+    font-size:13px;line-height:1.55;margin:12px 0}
+  pre .c{color:#6e7a87} pre .k{color:#ff7b9c} pre .s{color:#a5d6ff} pre .f{color:#d2a8ff}
+  pre .n{color:#79c0ff} pre .g{color:#7ee787}
+  p code,li code,td code,summary code,.sl-n code{background:#1b222b;border:1px solid #28313c;border-radius:5px;
+    padding:.5px 5px;font-size:13px;color:#cdd9e5}
+  .note{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--grn);
+    border-radius:0 10px 10px 0;padding:12px 16px;margin:16px 0}
+  .note.warn{border-left-color:var(--amb)}
+  .note .t{font-weight:700;font-size:12.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--grn);margin-bottom:3px}
+  .note.warn .t{color:var(--amb)}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:12px 0;overflow:hidden}
+  details>summary{cursor:pointer;padding:10px 16px;font-weight:600;font-size:14px;list-style:none;
+    display:flex;align-items:center;gap:9px;user-select:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary::before{content:"\25B6";color:var(--acc);font-size:10px;transition:transform .15s}
+  details[open]>summary::before{transform:rotate(90deg)}
+  details>summary:hover{background:var(--panel2)}
+  details .body{padding:2px 18px 16px;border-top:1px solid var(--line)}
+  table{border-collapse:collapse;width:100%;margin:13px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:7px 11px;text-align:left;vertical-align:top}
+  th{background:var(--panel2);font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut)}
+  tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+  /* badges (the book's stable color code) */
+  .badge{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;
+    padding:1px 8px;border-radius:5px;margin-right:6px;white-space:nowrap}
+  .b-req{background:#3a1622;color:#ff9db1} .b-stub{background:#3a2d10;color:var(--amb)}
+  .b-free{background:#16341f;color:var(--grn)} .b-later{background:#0f2b40;color:#79c0ff}
+  /* step strip (Ch1) */
+  .pipe{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0}
+  .stage{flex:1 1 110px;min-width:104px;background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    padding:10px;cursor:pointer;transition:.12s;position:relative}
+  .stage:hover{border-color:var(--acc);transform:translateY(-2px)}
+  .stage.sel{border-color:var(--acc);background:#15263a;box-shadow:var(--shadow)}
+  .stage .st{font-size:13px;font-weight:600} .stage .sd{font-size:11px;color:var(--mut);margin-top:3px;line-height:1.35}
+  .stage .tag{position:absolute;top:7px;right:8px;font-size:9px;font-weight:700;letter-spacing:.3px}
+  #stepDetail{background:var(--panel2);border:1px solid var(--line);border-radius:12px;margin:6px 0 4px;overflow:hidden}
+  #stepDetail .hd{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:11px 16px;
+    background:#13202f;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  #stepDetail .hd .ttl{font-size:15px;font-weight:700}
+  #stepDetail .bd{padding:12px 16px}
+  .who{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+  @media(max-width:760px){.who{grid-template-columns:1fr}}
+  .who>div{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:9px 12px;font-size:12.5px}
+  .who .wt{font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut);font-weight:700;margin-bottom:2px}
+  /* slot lookup (Ch2) */
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:14px 0}
+  @media(max-width:760px){.slots{grid-template-columns:1fr 1fr}}
+  .slot{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px;opacity:.5;transition:.15s}
+  .slot.hi{opacity:1;border-color:var(--acc);background:#15263a;box-shadow:var(--shadow)}
+  .slot .sl-n{font-size:13px;font-weight:600} .slot .sl-a{margin-top:5px}
+  .actchips{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0 4px}
+  .achip{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:4px 11px;
+    font:600 12px/1.5 "SF Mono",ui-monospace,monospace;cursor:pointer;color:#cdd9e5}
+  .achip:hover{border-color:var(--acc)} .achip.on{background:var(--pill);color:#fff;border-color:var(--acc)}
+  #actVerdict{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-top:10px;min-height:52px}
+  /* op ladder (Ch4) */
+  .dchips{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 14px}
+  .dchip{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:4px 13px;
+    font:600 12.5px/1.5 "SF Mono",monospace;cursor:pointer;color:var(--mut)}
+  .dchip:hover{border-color:var(--acc);color:var(--ink)} .dchip.on{background:var(--pill);color:#fff;border-color:var(--acc)}
+  .ladder{margin:14px 0 4px}
+  .lrow{display:flex;align-items:stretch;gap:0;margin:6px 0}
+  .lq{flex:0 0 260px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 13px;
+    font-size:13.5px;transition:.15s}
+  .lq.lit{border-color:var(--acc);background:#15263a;box-shadow:var(--shadow)}
+  .lq .ql{font-weight:700} .lq .qs{color:var(--mut);font-size:11.5px;margin-top:2px}
+  .lyes{flex:1;display:flex;align-items:center;padding-left:14px}
+  .lout{border-radius:10px;padding:8px 14px;font-size:13.5px;border:1px solid var(--line);background:var(--panel);
+    opacity:.5;transition:.15s;width:100%}
+  .lout.lit{opacity:1;box-shadow:var(--shadow)}
+  .lout.o-kernel.lit{border-color:#2a543a;background:#12271b}
+  .lout.o-fb.lit{border-color:#5a4a16;background:#241d09}
+  .lout.o-err.lit{border-color:#6b2742;background:#2b1622}
+  .lconn{display:flex;flex-direction:column;align-items:center;width:260px;flex:0 0 260px;color:#46525f}
+  .lconn .lbl{font:600 10.5px/1.4 "SF Mono",monospace;color:var(--mut)} .lconn .vl{width:2px;height:11px;background:var(--line)}
+  .lconn.lit .vl{background:var(--acc)} .lconn.lit .lbl{color:var(--acc)}
+  #opVerdict{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin-top:12px;min-height:48px}
+  @media(max-width:760px){.lq,.lconn{flex-basis:150px;width:150px}}
+  footer{max-width:var(--maxw);margin:0 auto;padding:28px 32px 80px;color:var(--mut);font-size:13px;border-top:1px solid var(--line)}
+  .langbtn{position:fixed;top:14px;right:16px;z-index:50;background:var(--pill);color:#cfe6ff;
+    border:1px solid var(--acc);border-radius:8px;padding:6px 13px;font:600 13px/1 -apple-system,system-ui,sans-serif;
+    cursor:pointer;box-shadow:var(--shadow)}
+  .langbtn:hover{background:#243748}
+  html[data-lang="zh"] body{font-family:"PingFang TC","Microsoft JhengHei","Noto Sans TC",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+</style>
+</head>
+<body>
+<button id="langToggle" class="langbtn" title="Switch language / 切換語言">繁中</button>
+<div class="layout">
+<nav class="toc" id="toc">
+  <h1>Register a New Device</h1>
+  <div class="sub">The minimum-effort path</div>
+  <a href="#intro">Preface · the one idea</a>
+  <a href="#workflow">1 · The workflow, end to end</a>
+  <a href="#dispatch">2 · What "register" means</a>
+  <a href="#runtime">3 · The C++ runtime slots</a>
+  <a href="#operators">4 · Operators with no kernels</a>
+  <a href="#python">5 · The Python surface</a>
+  <a href="#build">6 · Build, install, run</a>
+  <a href="#beyond">7 · Beyond the minimum</a>
+  <a href="#example">8 · Worked example: RVO + TinyLlama</a>
+  <a href="#colophon">Colophon · verify this book</a>
+</nav>
+
+<main>
+
+<!-- ================= PREFACE ================= -->
+<section id="intro">
+  <div class="ch">Preface</div>
+  <h2>The one idea</h2>
+  <p class="lead">PyTorch already knows how to do almost everything; it just does not know about <b>your</b> chip.
+  A device backend is nothing more than a small, fixed set of <b>slots</b> that PyTorch cannot guess on its own —
+  how to allocate memory, how to switch the current device, where the random generator lives, what a few core
+  operators do. Here is the <b>single idea this whole book hangs on</b>: registering a device means <b>filling those
+  slots</b>. Minimum effort means filling <b>only the required ones</b>, and letting one shared dispatch key
+  (<code>PrivateUse1</code>) plus a CPU fallback cover the other ~3500 operators you did not write.</p>
+
+  <p>CUDA fills the exact same slots. The only difference is <b>when and where</b>: CUDA is compiled into PyTorch,
+  so its slots are hardwired in-tree and code-generated; your backend lives in its own package and fills the same
+  slots at runtime, through <code>PrivateUse1</code>. Same holes, different filler. That symmetry is the spine — every
+  chapter is a detail on it.</p>
+
+  <p>Every slot in this book is tagged with how much work it really costs you. These four tags mean the same thing
+  on every table and widget:</p>
+  <table>
+    <tr><th></th><th>What it means</th><th>Minimum-effort move</th></tr>
+    <tr><td><span class="badge b-req">must write</span></td><td>required, or the device does not work at all</td><td>write a thin version (openreg shows how small)</td></tr>
+    <tr><td><span class="badge b-stub">stub ok</span></td><td>must exist, but a no-op / CPU-backed stub is enough</td><td>defer the real implementation</td></tr>
+    <tr><td><span class="badge b-free">free</span></td><td>PyTorch gives it to you once the key is named</td><td>do nothing</td></tr>
+    <tr><td><span class="badge b-later">later</span></td><td>optional; add it when you outgrow the minimum</td><td>skip for now</td></tr>
+  </table>
+
+  <div class="note">
+    <div class="t">How to read this book</div>
+    Chapter 1 is the spine: an <b>interactive end-to-end checklist</b> — click each step to see what it is, why it
+    exists, and how small it can be. Chapter 2 shows what "register" means to the dispatcher — pick a line of user
+    code, watch which slot answers it. Chapter 4 is a routing widget for operators. Everything behind a
+    <code>&#9654;</code> is detail-on-demand. Every claim carries a pill like
+    <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/__init__.py#L17">__init__.py:17</a>
+    linking the exact source line, pinned to the commit this book was verified against. The reference backend is
+    <b>torch_openreg</b>, PyTorch's official, runnable example of this whole path.
+  </div>
+
+  <h3>The minimum-effort scoreboard</h3>
+  <p>The entire job, on one screen. This is the spine table; the rest of the book is one chapter per row.</p>
+  <table>
+    <tr><th>Slot</th><th>Effort</th><th>The one call</th><th>openreg</th><th>CUDA does it at</th></tr>
+    <tr><td>Dispatch key + name</td><td><span class="badge b-req">must write</span></td><td><code>rename_privateuse1_backend("x")</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/__init__.py#L17">__init__.py:17</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/core/DispatchKey.h#L38">DispatchKey.h:38</a></td></tr>
+    <tr><td>Device guard</td><td><span class="badge b-req">must write</span></td><td><code>C10_REGISTER_GUARD_IMPL</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGuard.cpp#L6">OpenRegGuard.cpp:6</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/cuda/impl/CUDAGuardImpl.cpp#L5">CUDAGuardImpl.cpp:5</a></td></tr>
+    <tr><td>Device allocator</td><td><span class="badge b-req">must write</span></td><td><code>REGISTER_ALLOCATOR</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegDeviceAllocator.cpp#L273">OpenRegDeviceAllocator.cpp:273</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/cuda/CUDACachingAllocator.cpp#L5381">CUDACachingAllocator.cpp:5381</a></td></tr>
+    <tr><td>Hooks interface</td><td><span class="badge b-req">must write</span></td><td><code>RegisterPrivateUse1HooksInterface</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.cpp#L6">OpenRegHooks.cpp:6</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/cuda/detail/CUDAHooks.cpp#L589">CUDAHooks.cpp:589</a></td></tr>
+    <tr><td>Core operators + fallback</td><td><span class="badge b-req">must write</span></td><td><code>TORCH_LIBRARY_IMPL</code> + <code>m.fallback</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L119">OpenRegMinimal.cpp:119</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/native/native_functions.yaml#L2324">native_functions.yaml:2324</a></td></tr>
+    <tr><td>Python device module</td><td><span class="badge b-req">must write</span></td><td><code>torch._register_device_module</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/__init__.py#L18">__init__.py:18</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/__init__.py#L2300">__init__.py:2300</a></td></tr>
+    <tr><td>Build &amp; run</td><td><span class="badge b-req">must write</span></td><td><code>CppExtension</code> + <code>pip install -e .</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/setup.py#L116">setup.py:116</a></td><td><code>libtorch_cuda</code></td></tr>
+    <tr><td>Host / pinned allocator</td><td><span class="badge b-stub">stub ok</span></td><td><code>REGISTER_HOST_ALLOCATOR</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHostAllocator.cpp#L6">OpenRegHostAllocator.cpp:6</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/cuda/CachingHostAllocator.cpp#L279">CachingHostAllocator.cpp:279</a></td></tr>
+    <tr><td>Generator (RNG)</td><td><span class="badge b-stub">stub ok</span></td><td>hooks <code>getDefaultGenerator</code></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.h#L85">OpenRegHooks.h:85</a></td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/cuda/CUDAGeneratorImpl.cpp#L50">CUDAGeneratorImpl.cpp:50</a></td></tr>
+    <tr><td>Autograd, autocast plumbing, serialization, <code>torch.accelerator</code></td><td><span class="badge b-free">free</span></td><td>nothing — named-key gives it to you</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/core/VariableFallbackKernel.cpp#L111">VariableFallbackKernel.cpp:111</a></td><td>—</td></tr>
+  </table>
+  <p class="mut">Payoff test: once <code>torch.empty(3, device="x")</code> and <code>(x + 1).cpu()</code> run, every
+  required slot is filled &mdash; that is a registered device (and, per Chapter 8, enough to run TinyLlama-1.1B
+  through the fallback).</p>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 1 WORKFLOW ================= -->
+<section id="workflow">
+  <div class="ch">Chapter 1</div>
+  <h2>The workflow, end to end</h2>
+  <p class="lead">Six things to write, in order, and then you build and run. <b>Click any step</b> below to see what it
+  does, why PyTorch needs it, the single registration call, the openreg line that proves it, and how small the
+  minimum version can be. The order matters: each step assumes the ones before it.</p>
+
+  <div class="pipe" id="pipe"></div>
+  <div id="stepDetail"></div>
+
+  <p class="mut">Steps 1 and 6 are Python (Chapter 5); steps 2&ndash;5 are C++ (Chapters 3&ndash;4); step 7 is
+  packaging (Chapter 6). Everything tagged <span class="badge b-free">free</span> on the scoreboard needs no step at all.</p>
+
+  <details>
+    <summary>The whole Python side, in three lines</summary>
+    <div class="body">
+      <p>At import time your package runs exactly this. Order is mandatory: name the key first, then hand PyTorch the
+      module, then generate the convenience methods. openreg
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/__init__.py#L17">__init__.py:17</a>:</p>
+      <pre><span class="k">import</span> torch, torch_openreg
+torch.utils.<span class="f">rename_privateuse1_backend</span>(<span class="s">"openreg"</span>)        <span class="c"># 1. claim + name the key</span>
+torch._register_device_module(<span class="s">"openreg"</span>, torch_openreg.openreg)  <span class="c"># 2. staple module onto torch.openreg</span>
+torch.utils.<span class="f">generate_methods_for_privateuse1_backend</span>(for_storage=<span class="n">True</span>)  <span class="c"># 3. tensor.openreg(), .is_openreg</span></pre>
+      <p>The C++ registrations (steps 2&ndash;5) are not called from Python — they run automatically as
+      <em>static initializers</em> when your shared library is loaded. You never call them; linking the
+      <code>.cpp</code> in is what arms them.</p>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 2 DISPATCH ================= -->
+<section id="dispatch">
+  <div class="ch">Chapter 2</div>
+  <h2>What "register" actually means</h2>
+  <p class="lead">"Registering" is not magic — it is dropping a pointer into a global table. PyTorch keeps a handful of
+  tables indexed by device type: one for guards, one for allocators, one pointer for hooks, a slot per operator. To
+  register a device is to write your objects into those slots for the <code>PrivateUse1</code> entry. After that,
+  every piece of generic PyTorch code finds your code by looking up the table — it never needs to know it is talking
+  to your chip.</p>
+
+  <p><b>Pick a line of user code</b> below and watch which slot answers it. This is the payoff of registration: ordinary
+  user code routes, with no special-casing, into the slots you filled.</p>
+
+  <div class="slots" id="slotGrid"></div>
+  <div class="actchips" id="actChips"></div>
+  <div id="actVerdict"></div>
+
+  <details>
+    <summary>The tables, concretely</summary>
+    <div class="body">
+      <p>None of these are abstractions — they are plain global arrays/pointers you can point at:</p>
+      <ul>
+        <li><b>Guards:</b> a fixed array indexed by <code>DeviceType</code>;
+        <code>C10_REGISTER_GUARD_IMPL</code> writes a <code>new</code>-ed instance into your slot
+        (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/core/impl/DeviceGuardImplInterface.h#L379">DeviceGuardImplInterface.h:379</a>).</li>
+        <li><b>Allocators:</b> a table keyed by <code>DeviceType</code>; <code>REGISTER_ALLOCATOR</code> calls
+        <code>SetAllocator</code>
+        (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/core/Allocator.h#L299">Allocator.h:299</a>).</li>
+        <li><b>Hooks:</b> a single process-global pointer set once by
+        <code>RegisterPrivateUse1HooksInterface</code>
+        (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/detail/PrivateUse1HooksInterface.cpp#L8">PrivateUse1HooksInterface.cpp:8</a>).</li>
+        <li><b>Operators:</b> the dispatcher's per-operator table; <code>TORCH_LIBRARY_IMPL(aten, PrivateUse1, m)</code>
+        writes one kernel into the <code>PrivateUse1</code> column
+        (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L119">OpenRegMinimal.cpp:119</a>).</li>
+      </ul>
+      <p class="mut">CUDA writes into the very same tables, just under the <code>CUDA</code> key instead of
+      <code>PrivateUse1</code> — its registrations are emitted by codegen and compiled into <code>libtorch_cuda</code>.</p>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 3 RUNTIME ================= -->
+<section id="runtime">
+  <div class="ch">Chapter 3</div>
+  <h2>The C++ runtime slots</h2>
+  <p class="lead">Four C++ objects do the heavy lifting: the <b>guard</b> (drive the device context), the
+  <b>allocator</b> (get and free bytes), the <b>hooks</b> (answer generic questions), and the <b>generator</b>
+  (random numbers). For minimum effort, openreg shows that each can be small — and that the parts you skip simply
+  throw a clear error if anyone reaches them, rather than failing the build.</p>
+
+  <details open>
+    <summary><span class="badge b-req">must write</span> The device guard</summary>
+    <div class="body">
+      <p><b>Feynman:</b> PyTorch needs a generic way to ask "which device am I on?", "switch to device 1 and back",
+      "give me a stream". It cannot call your driver directly, so you write one object with those methods and drop it
+      in the guard table. The RAII <code>DeviceGuard</code> users rely on is built on top.</p>
+      <p>Subclass <code>c10::impl::DeviceGuardImplInterface</code>, mark it <code>final</code>, set
+      <code>static_type = DeviceType::PrivateUse1</code>, and register it:</p>
+      <pre><span class="k">struct</span> <span class="n">OpenRegGuardImpl</span> <span class="k">final</span> : <span class="k">public</span> c10::impl::DeviceGuardImplInterface { <span class="c">/* device + stream + event methods */</span> };
+<span class="f">C10_REGISTER_GUARD_IMPL</span>(PrivateUse1, OpenRegGuardImpl);</pre>
+      <p>Minimum effort: implement the six device methods (<code>type</code>, <code>getDevice</code>,
+      <code>setDevice</code>, <code>uncheckedSetDevice</code>, <code>exchangeDevice</code>, <code>deviceCount</code>)
+      plus <code>getStream</code>/<code>exchangeStream</code>. The event methods have <b>throwing default bodies</b>, so
+      a backend that ignores streams/events still compiles — code that touches them just errors at runtime.
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGuard.cpp#L6">OpenRegGuard.cpp:6</a>
+      &middot; interface
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/core/impl/DeviceGuardImplInterface.h#L60">DeviceGuardImplInterface.h:60</a>
+      &middot; CUDA twin
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/cuda/impl/CUDAGuardImpl.h#L23">CUDAGuardImpl.h:23</a></p>
+      <div class="note warn"><div class="t">Gotcha</div><code>deviceCount()</code> and
+      <code>uncheckedSetDevice()</code> are <code>noexcept</code> by contract: <code>deviceCount</code> must report
+      <b>0</b> on a driver error, never throw. And the struct must be <code>final</code> so the compiler can
+      devirtualize the hot <code>exchangeDevice</code> call.</div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge b-req">must write</span> The allocator (and <span class="badge b-stub">stub ok</span> pinned memory)</summary>
+    <div class="body">
+      <p><b>Feynman:</b> tensor bytes have to come from somewhere. You write an allocator whose
+      <code>allocate()</code> calls your runtime's malloc and returns a self-freeing <code>DataPtr</code>, then drop
+      it in the allocator table for <code>PrivateUse1</code>.</p>
+      <pre><span class="f">REGISTER_ALLOCATOR</span>(c10::DeviceType::PrivateUse1, &g_allocator);</pre>
+      <p>Minimum effort: a plain malloc/free is fine — openreg's allocator does <b>no caching</b>
+      (<code>emptyCache</code> and <code>recordStream</code> are no-op stubs) and it still works. The pinned/host
+      allocator is <span class="badge b-stub">stub ok</span>: register it with
+      <code>REGISTER_HOST_ALLOCATOR(at::kPrivateUse1, ...)</code> and expose it through the hooks, or skip it and
+      <code>pin_memory()</code> simply will not accelerate.
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegDeviceAllocator.cpp#L273">OpenRegDeviceAllocator.cpp:273</a>
+      &middot; host
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHostAllocator.cpp#L6">OpenRegHostAllocator.cpp:6</a></p>
+      <p class="mut">CUDA does not use the macro: it calls <code>SetAllocator(kCUDA, r, /*priority=*/1)</code> so the
+      caching allocator (or <code>cudaMallocAsync</code>) can override the default
+      (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/cuda/CUDACachingAllocator.cpp#L5381">CUDACachingAllocator.cpp:5381</a>).
+      You do not need that for a first backend.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge b-req">must write</span> The hooks interface</summary>
+    <div class="body">
+      <p><b>Feynman:</b> when PyTorch wants a general fact about your device — "are you available?", "how many
+      devices?", "give me the default generator", "is this pointer pinned?" — it does not call a kernel. It calls
+      <b>hooks</b>: one object answering all these questions, handed to PyTorch once.</p>
+      <pre><span class="k">struct</span> <span class="n">OpenRegHooksInterface</span> : <span class="k">public</span> at::PrivateUse1HooksInterface { <span class="c">/* overrides */</span> };
+at::<span class="f">RegisterPrivateUse1HooksInterface</span>(<span class="k">new</span> OpenRegHooksInterface());  <span class="c">// once, in a static init</span></pre>
+      <p>Minimum effort: override the few hooks you actually use (e.g. <code>getDefaultGenerator</code>,
+      <code>getPinnedMemoryAllocator</code>, <code>isPinnedPtr</code>). Every hook you skip has a <b>default that
+      throws a clear "not implemented" at call time</b> — so an unfinished hooks object still links and runs.
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.cpp#L6">OpenRegHooks.cpp:6</a>
+      &middot; base
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/detail/PrivateUse1HooksInterface.h#L15">PrivateUse1HooksInterface.h:15</a></p>
+      <div class="note"><div class="t">Myth, debunked</div>You may read that <code>hasPrimaryContext</code> is a
+      pure-virtual you <em>must</em> override to compile. That is only true of the abstract
+      <code>AcceleratorHooksInterface</code>. The class you actually subclass,
+      <code>PrivateUse1HooksInterface</code>, already supplies a throwing default for it
+      (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/detail/PrivateUse1HooksInterface.h#L15">PrivateUse1HooksInterface.h:15</a>),
+      so your subclass compiles without it — it just throws if called. Override it for correct behavior, not to
+      satisfy the compiler.</div>
+      <div class="note warn"><div class="t">Gotcha</div>Register <b>exactly once</b>, and heap-allocate it
+      (<code>new</code>) — core keeps the raw pointer for the whole process. A second registration hard-fails the
+      process (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/detail/PrivateUse1HooksInterface.cpp#L8">PrivateUse1HooksInterface.cpp:8</a>).</div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge b-stub">stub ok</span> The generator (RNG)</summary>
+    <div class="body">
+      <p><b>Feynman:</b> random ops need a per-device "dice roller" you can seed for reproducibility. The cheapest
+      version reuses the CPU one: openreg derives its generator from <code>at::CPUGeneratorImpl</code> and just stamps
+      the <code>PrivateUse1</code> device/key on it — so randomness actually runs on CPU, which is fine to start.</p>
+      <p>Wire it through the hooks (the modern path): override <code>getDefaultGenerator</code> (one shared instance
+      per device) and <code>getNewGenerator</code> (a fresh one). That is all <code>torch.manual_seed</code> needs.
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.h#L85">OpenRegHooks.h:85</a>
+      &middot; impl
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGenerator.cpp#L9">OpenRegGenerator.cpp:9</a></p>
+      <p class="mut">There is an older <code>REGISTER_GENERATOR_PRIVATEUSE1</code> macro; it is <b>deprecated</b> and
+      warns. Use the hooks. A real accelerator later implements the full <code>GeneratorImpl</code> contract (like
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/cuda/CUDAGeneratorImpl.cpp#L50">CUDAGeneratorImpl.cpp:50</a>)
+      so randomness runs on-device.</p>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 4 OPERATORS ================= -->
+<section id="operators">
+  <div class="ch">Chapter 4</div>
+  <h2>Operators with (almost) no kernels</h2>
+  <p class="lead">PyTorch has ~3500 operators. The minimum-effort trick is to hand-write only a tiny core — the ones
+  that <b>allocate or move bytes</b> — and register a single <b>catch-all fallback</b> that quietly ships every other
+  op to the CPU, runs it there, and copies the result back. You replace fallbacks with native kernels later, one at a
+  time, as you need speed.</p>
+
+  <p><b>Pick an operator</b> and watch how it routes:</p>
+  <div class="dchips" id="opChips"></div>
+  <div class="ladder" id="opLadder"></div>
+  <div id="opVerdict"></div>
+
+  <p>The two registration blocks that make this work — the minimal kernels, and the wildcard fallback:</p>
+  <pre><span class="f">TORCH_LIBRARY_IMPL</span>(aten, PrivateUse1, m) {        <span class="c">// ~10 core ops you must write</span>
+    m.impl(<span class="s">"empty.memory_format"</span>, wrapper_empty_memory_format);
+    m.impl(<span class="s">"_copy_from"</span>, ...);  <span class="c">// view, as_strided, _local_scalar_dense, ...</span>
+}
+<span class="f">TORCH_LIBRARY_IMPL</span>(_, PrivateUse1, m) {           <span class="c">// the wildcard "_" namespace = every other op</span>
+    m.fallback(torch::CppFunction::makeFromBoxedFunction&lt;&wrapper_cpu_fallback&gt;());
+}</pre>
+  <p class="mut"><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L119">OpenRegMinimal.cpp:119</a>
+  (kernels) &middot;
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L141">OpenRegMinimal.cpp:141</a>
+  (fallback). Contrast CUDA, which writes no such blocks: it lists <code>dispatch: CUDA: empty_cuda</code> in
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/native/native_functions.yaml#L2324">native_functions.yaml:2324</a>
+  and codegen emits the registrations. Out-of-tree, there is no codegen — you hand-write
+  <code>TORCH_LIBRARY_IMPL</code>.</p>
+
+  <details>
+    <summary>Why <code>_copy_from</code> is the one kernel you cannot get wrong</summary>
+    <div class="body">
+      <p><code>_copy_from</code> is the engine of <code>Tensor.copy_</code> and of all cross-device transfers — which
+      means the CPU fallback itself rides on it (move inputs to CPU, run, copy back). If it is wrong, the fallback
+      breaks, and with it the other ~3490 ops. Get this one right first.
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/native/Minimal.cpp#L81">Minimal.cpp:81</a></p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Two things you get for free, and one trap</summary>
+    <div class="body">
+      <ul>
+        <li><span class="badge b-free">free</span> <b>Autograd.</b> Because autograd is always on, even forward-only
+        ops dispatch through <code>AutogradPrivateUse1</code>. PyTorch ships a generic fallback there that lets the
+        forward pass through and only errors if a real backward is requested — so training-free inference works with
+        zero autograd code.
+        <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/core/VariableFallbackKernel.cpp#L111">VariableFallbackKernel.cpp:111</a></li>
+        <li><span class="badge b-later">later</span> <b>Blocklist.</b> The fallback can refuse specific ops so they
+        raise a clear error instead of silently running slowly on CPU — openreg does this for <code>abs</code> to
+        force a native kernel.
+        <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/native/Minimal.cpp#L167">Minimal.cpp:167</a></li>
+        <li><span class="badge b-later">later</span> <b>STUB ops</b> (TensorIterator kernels like <code>abs_stub</code>)
+        are a two-step trap: registering <code>REGISTER_PRIVATEUSE1_DISPATCH(abs_stub, ...)</code> does nothing
+        unless you <em>also</em> register the structured out-variant <code>abs.out</code> under
+        <code>PrivateUse1</code>.
+        <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegExtra.cpp#L137">OpenRegExtra.cpp:137</a></li>
+      </ul>
+      <div class="note warn"><div class="t">Trap</div>The fallback lives in the wildcard <code>_</code> namespace and
+      uses <code>m.fallback()</code>, not <code>m.impl()</code>, and must be a <b>boxed</b> function
+      (<code>OperatorHandle</code>, <code>Stack*</code>). A typed kernel will not work as a fallback.</div>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 5 PYTHON ================= -->
+<section id="python">
+  <div class="ch">Chapter 5</div>
+  <h2>The Python surface</h2>
+  <p class="lead">Three lines make <code>torch.mydev.*</code> and <code>tensor.mydev()</code> work, plus a small
+  Python module of runtime functions. The payoff is big: once the key is named, your backend shows up under the
+  generic <code>torch.accelerator.*</code> API automatically.</p>
+
+  <p>Step 1, name the key, must come <b>first</b> — it is what makes <code>"mydev"</code> a valid device string and
+  aliases the profiler and autograd enums. Then hand PyTorch your module and generate the convenience methods:</p>
+  <pre>torch.utils.<span class="f">rename_privateuse1_backend</span>(<span class="s">"openreg"</span>)
+torch._register_device_module(<span class="s">"openreg"</span>, torch_openreg.openreg)
+torch.utils.<span class="f">generate_methods_for_privateuse1_backend</span>(for_storage=<span class="n">True</span>)</pre>
+  <p class="mut"><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/utils/backend_registration.py#L76">backend_registration.py:76</a>
+  &middot;
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/__init__.py#L2842">__init__.py:2842</a>
+  &middot;
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/utils/backend_registration.py#L409">backend_registration.py:409</a></p>
+
+  <p>Your device module just needs the handful of names PyTorch and <code>torch.accelerator</code> look up by
+  convention. Minimum set:</p>
+  <table>
+    <tr><th>Function</th><th>What it answers</th></tr>
+    <tr><td><code>device_count()</code></td><td>how many devices exist</td></tr>
+    <tr><td><code>current_device()</code></td><td>which one is active</td></tr>
+    <tr><td><code>set_device(i)</code></td><td>switch the active device</td></tr>
+    <tr><td><code>is_available()</code></td><td>is the backend usable at all</td></tr>
+    <tr><td><code>is_initialized()</code> / <code>init()</code></td><td>lazy-init bookkeeping</td></tr>
+  </table>
+  <p class="mut">These typically forward to your C extension (e.g. <code>torch_openreg._C._get_device_count()</code>).
+  openreg's module:
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/openreg/__init__.py#L36">__init__.py:36</a>.</p>
+
+  <div class="note"><div class="t"><span class="badge b-free">free</span> torch.accelerator, for nothing</div>
+  Once the key is registered, <code>at::accelerator::getAccelerator</code> picks <code>PrivateUse1</code> as the
+  active accelerator, so <code>torch.accelerator.current_accelerator()</code>,
+  <code>torch.accelerator.device_count()</code> and friends route to your module with no extra Python wiring.
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/DeviceAccelerator.cpp#L8">DeviceAccelerator.cpp:8</a></div>
+
+  <div class="note warn"><div class="t">Gotcha</div>The ordering is enforced and the rename is once-per-process. Call
+  <code>rename_privateuse1_backend</code> before the other two, and never twice — a second call (or a different name,
+  or an in-tree name like <code>"cuda"</code>) raises from C++
+  (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/core/DeviceType.cpp#L140">DeviceType.cpp:140</a>).</div>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 6 BUILD ================= -->
+<section id="build">
+  <div class="ch">Chapter 6</div>
+  <h2>Build, install, run</h2>
+  <p class="lead">The C++ registrations only exist if their <code>.cpp</code> files are compiled into a library that
+  actually loads. So packaging is the last required step: build the native library, link it into a Python
+  <code>_C</code> extension, and (optionally) declare an entry point so <code>import torch</code> loads you
+  automatically.</p>
+
+  <ol>
+    <li><b>Build the native library.</b> A <code>CMakeLists.txt</code> globs your <code>csrc/*.cpp</code> so every
+    registrar (guard, allocator, hooks, ops) is compiled in — drop a new <code>.cpp</code> under <code>csrc/</code>
+    and it is picked up, no per-file edit.
+    <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/CMakeLists.txt#L3">CMakeLists.txt:3</a></li>
+    <li><b>Link it into a Python <code>_C</code> extension.</b> <code>setup.py</code> declares the extension and ships
+    the <code>.so</code>.
+    <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/setup.py#L116">setup.py:116</a></li>
+    <li><b>Declare autoload</b> (optional but recommended) so users never type <code>import torch_openreg</code>.
+    <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/setup.py#L145">setup.py:145</a></li>
+    <li><b>Install and smoke-test:</b> <code>pip install -e .</code>, then the e2e check below.</li>
+  </ol>
+
+  <pre><span class="k">import</span> torch, torch_openreg
+x = torch.empty(<span class="n">3</span>, device=<span class="s">"openreg"</span>)   <span class="c"># allocator + guard + empty kernel</span>
+y = (x + <span class="n">1</span>).cpu()                      <span class="c"># add via CPU fallback, _copy_from back</span>
+<span class="k">print</span>(torch.accelerator.current_accelerator())  <span class="c"># device(type='openreg')  -- free</span></pre>
+  <p class="mut">If those three lines run, every required slot is filled. That is a registered device.</p>
+
+  <details>
+    <summary>The two libraries (a common point of confusion)</summary>
+    <div class="body">
+      <p>openreg builds <b>two</b> CMake libraries, which is worth understanding so you put files in the right place:</p>
+      <ul>
+        <li><code>torch_openreg</code> — the <b>runtime</b> library: guard, allocator, hooks, generator, ops,
+        serialization. Built from <code>csrc/</code>
+        (<a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/CMakeLists.txt#L3">csrc/CMakeLists.txt:3</a>).</li>
+        <li><code>torch_bindings</code> — the Python <code>_C</code> extension (the <code>PyMethodDef</code> table). It
+        <b>links</b> <code>torch_openreg</code>, so loading <code>_C</code> transitively loads the runtime library and
+        fires all its static registrars.</li>
+      </ul>
+      <p class="mut">So the runtime registrations live in <code>torch_openreg</code>, not in the <code>_C</code>
+      extension; the <code>_C</code> extension only exposes Python-callable helpers. CUDA, by contrast, is imported
+      unconditionally inside the torch package (<code>from torch import cuda</code>,
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/__init__.py#L2300">__init__.py:2300</a>),
+      so it needs no entry point.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Autoload: a no-op entry point, and a build-time guard</summary>
+    <div class="body">
+      <p>The entry point in the <code>torch.backends</code> group points at a function that is a deliberate
+      <b>no-op</b> — all the real work happens as <em>import side effects</em> (the three lines from Chapter 5) when
+      PyTorch imports your package to reach that function. PyTorch's autoload driver scans these at
+      <code>import torch</code>.
+      <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/torch/__init__.py#L3011">__init__.py:3011</a></p>
+      <div class="note warn"><div class="t">Gotcha</div>Any build script that imports torch while your half-built
+      backend is installed will autoload it and fail. Set <code>TORCH_DEVICE_BACKEND_AUTOLOAD=0</code> before
+      <code>import torch</code> in build/codegen scripts — openreg's <code>setup.py</code> does exactly this. Also: a
+      crash in your entry point breaks plain <code>import torch</code> for everyone who installed you, so keep it
+      robust.</div>
+    </div>
+  </details>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 7 BEYOND ================= -->
+<section id="beyond">
+  <div class="ch">Chapter 7</div>
+  <h2>Beyond the minimum</h2>
+  <p class="lead">Everything above gets a device that runs. These are the upgrades — each one optional, each one a
+  separate slot you fill when you need it. None block a first working backend.</p>
+
+  <table>
+    <tr><th>Upgrade</th><th>Effort</th><th>What you add</th><th>Anchor</th></tr>
+    <tr><td>Native kernels</td><td><span class="badge b-later">later</span></td><td>replace CPU fallbacks with real <code>m.impl</code> kernels / STUBs, op by op, for speed</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegExtra.cpp#L137">OpenRegExtra.cpp:137</a></td></tr>
+    <tr><td>On-device RNG</td><td><span class="badge b-later">later</span></td><td>implement the full <code>GeneratorImpl</code> instead of borrowing CPU's</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/cuda/CUDAGeneratorImpl.cpp#L50">CUDAGeneratorImpl.cpp:50</a></td></tr>
+    <tr><td>AMP / autocast</td><td><span class="badge b-later">later</span></td><td>a fallthrough + per-op <code>KERNEL_PRIVATEUSEONE</code> casts, plus <code>get_amp_supported_dtype()</code> in Python</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/amp/autocast_mode.cpp#L20">autocast_mode.cpp:20</a></td></tr>
+    <tr><td>Streams &amp; events</td><td><span class="badge b-later">later</span></td><td>real stream pool + event wrappers, driven by the guard's stream/event methods</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegStream.cpp#L230">OpenRegStream.cpp:230</a></td></tr>
+    <tr><td>Custom tensor metadata in save/load</td><td><span class="badge b-later">later</span></td><td>subclass <code>BackendMeta</code> + <code>REGISTER_PRIVATEUSE1_SERIALIZATION</code> (storage-level save/load is already <span class="badge b-free">free</span>)</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegSerialization.cpp#L46">OpenRegSerialization.cpp:46</a></td></tr>
+    <tr><td>torch.compile support</td><td><span class="badge b-later">later</span></td><td>register Meta/fake kernels for shape inference on deviceless tensors</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/openreg/meta.py#L5">meta.py:5</a></td></tr>
+    <tr><td>Distributed</td><td><span class="badge b-later">later</span></td><td>a custom <code>ProcessGroup</code> backend</td><td><a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/distributed/c10d/ProcessGroupOCCL.cpp#L1">ProcessGroupOCCL.cpp</a></td></tr>
+  </table>
+  <p class="mut">Each of these has its own chapter in PyTorch's official accelerator guide
+  (<code>docs/source/accelerator/</code>); this book deliberately stops at the minimum that makes
+  <code>torch.empty(device="mydev")</code> run.</p>
+</section>
+
+<hr class="hr">
+
+<!-- ================= 8 WORKED EXAMPLE ================= -->
+<section id="example">
+  <div class="ch">Chapter 8</div>
+  <h2>Worked example: RVO + TinyLlama-1.1B</h2>
+  <p class="lead">Let's actually do it. <b>RVO</b> is a made-up accelerator; we register it with the least code that
+  works, then <b>actually run TinyLlama-1.1B</b> on it. The trick that makes it tiny: <b>RVO's device memory is just
+  host memory</b>, so the ~10 core ops are one-liners and every real model op (matmul, attention, RMSNorm, softmax)
+  rides the CPU fallback. The model runs <b>correctly</b> &mdash; at CPU speed &mdash; while genuinely dispatching as
+  <code>device="rvo"</code>.</p>
+
+  <h3>The whole package: six small files</h3>
+  <p>RVO is even leaner than openreg: one C++ file built by <code>torch.utils.cpp_extension</code> (no CMake), plus
+  the three-line Python registration. The shape:</p>
+  <pre>rvo/
+  rvo/__init__.py     <span class="c"># rename_privateuse1_backend + _register_device_module + generate_methods</span>
+  rvo/_device.py      <span class="c"># device_count / current_device / set_device / is_available</span>
+  csrc/rvo.cpp        <span class="c"># guard + allocator(==malloc) + hooks + ~10 ops + CPU fallback</span>
+  setup.py            <span class="c"># CppExtension("rvo._C", ["csrc/rvo.cpp"]) + autoload entry point</span>
+  run_tinyllama.py    <span class="c"># real TinyLlama-1.1B, runs end to end (the live proof)</span>
+  run_tiny_llama.py   <span class="c"># tiny from-scratch model, instant smoke test (no download)</span></pre>
+  <p>The registration is the same three lines from Chapter 5; the C++ is the same four registrars from Chapter 3,
+  collapsed because device memory is host memory:</p>
+  <pre><span class="c"># rvo/__init__.py</span>
+torch.utils.<span class="f">rename_privateuse1_backend</span>(<span class="s">"rvo"</span>)
+torch._register_device_module(<span class="s">"rvo"</span>, _device)
+torch.utils.<span class="f">generate_methods_for_privateuse1_backend</span>(for_storage=<span class="n">True</span>)
+
+<span class="c">// csrc/rvo.cpp -- the four registrars, bodies trivial because memory == host memory</span>
+<span class="f">C10_REGISTER_GUARD_IMPL</span>(PrivateUse1, RVOGuard);              <span class="c">// single-device, all no-ops</span>
+<span class="f">REGISTER_ALLOCATOR</span>(c10::DeviceType::PrivateUse1, &g_alloc);  <span class="c">// allocate() == malloc()</span>
+at::<span class="f">RegisterPrivateUse1HooksInterface</span>(<span class="k">new</span> RVOHooks());        <span class="c">// hasPrimaryContext -> true</span>
+<span class="f">TORCH_LIBRARY_IMPL</span>(aten, PrivateUse1, m) { m.impl(<span class="s">"empty.memory_format"</span>, ...); <span class="c">/* ~10 ops */</span> }
+<span class="f">TORCH_LIBRARY_IMPL</span>(_, PrivateUse1, m) { m.fallback(makeFromBoxedFunction&lt;&cpu_fallback&gt;()); }</pre>
+  <p class="mut">Each registrar is the genuine API from Chapter 3:
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGuard.cpp#L6">OpenRegGuard.cpp:6</a>,
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegDeviceAllocator.cpp#L273">OpenRegDeviceAllocator.cpp:273</a>,
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.cpp#L6">OpenRegHooks.cpp:6</a>,
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L119">OpenRegMinimal.cpp:119</a> /
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L141">:141</a>.
+  Copy the real op bodies (especially
+  <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/native/Minimal.cpp#L81">_copy_from</a>)
+  from openreg.</p>
+
+  <h3>Aligned with OpenReg and CUDA</h3>
+  <p>RVO isn't a new design &mdash; it's OpenReg's mechanism, trimmed, filling the same slots CUDA fills in-tree.
+  Construct by construct:</p>
+  <table>
+    <tr><th>Construct</th><th>RVO</th><th>OpenReg</th><th>CUDA</th><th>Aligned</th></tr>
+    <tr>
+      <td>Device guard</td>
+      <td><code>RVOGuard : DeviceGuardImplInterface</code> (<code>final</code>, <code>static_type=PrivateUse1</code>); <code>C10_REGISTER_GUARD_IMPL</code></td>
+      <td><code>OpenRegGuardImpl</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGuard.cpp#L6">OpenRegGuard.cpp:6</a></td>
+      <td><code>CUDAGuardImpl</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/cuda/impl/CUDAGuardImpl.cpp#L5">CUDAGuardImpl.cpp:5</a></td>
+      <td><span class="badge b-free">all three</span></td>
+    </tr>
+    <tr>
+      <td>Device allocator</td>
+      <td><code>RVOAllocator : c10::DeviceAllocator</code>; <code>REGISTER_ALLOCATOR</code></td>
+      <td><code>OpenRegDeviceAllocator : DeviceAllocator</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegDeviceAllocator.cpp#L273">OpenRegDeviceAllocator.cpp:273</a></td>
+      <td><code>NativeCachingAllocator : CUDAAllocator : DeviceAllocator</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/c10/cuda/CUDACachingAllocator.cpp#L5381">CUDACachingAllocator.cpp:5381</a></td>
+      <td><span class="badge b-free">vs OpenReg</span></td>
+    </tr>
+    <tr>
+      <td>Hooks interface</td>
+      <td><code>RVOHooks : PrivateUse1HooksInterface</code>; <code>RegisterPrivateUse1HooksInterface(new ...)</code></td>
+      <td><code>OpenRegHooksInterface</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.cpp#L6">OpenRegHooks.cpp:6</a></td>
+      <td><code>CUDAHooks</code> via <code>REGISTER_CUDA_HOOKS</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/cuda/detail/CUDAHooks.cpp#L589">CUDAHooks.cpp:589</a></td>
+      <td><span class="badge b-free">vs OpenReg</span></td>
+    </tr>
+    <tr>
+      <td>Core operators + fallback</td>
+      <td><code>TORCH_LIBRARY_IMPL(aten / _, PrivateUse1)</code> + <code>m.fallback</code></td>
+      <td>same <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L119">OpenRegMinimal.cpp:119</a> / <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp#L141">:141</a></td>
+      <td>codegen from <code>native_functions.yaml</code> <a class="src" target="_blank" href="https://github.com/pytorch/pytorch/blob/0a327fa9ec53035748b747c16c6f97a6bdae764a/aten/src/ATen/native/native_functions.yaml#L2324">native_functions.yaml:2324</a></td>
+      <td><span class="badge b-free">vs OpenReg</span></td>
+    </tr>
+  </table>
+  <p class="mut">Where CUDA differs &mdash; allocator via <code>SetAllocator</code>, hooks via a class registry, ops via
+  codegen &mdash; that's the in-tree vs out-of-tree split from Chapters 3&ndash;4; a PrivateUse1 backend follows
+  OpenReg's style. Two nuances: RVO marks <code>getStream</code>/<code>exchangeStream</code> <code>noexcept</code> like
+  OpenReg (CUDA omits it &mdash; both legal), and the skeleton stubs streams/events and shows 2 of the ~10 core ops.</p>
+
+  <h3>Run TinyLlama-1.1B</h3>
+  <p>Once <code>rvo</code> is installed, running a real LLM is one <code>.to("rvo")</code> plus a short greedy loop.
+  TinyLlama-1.1B is <b>ungated</b>, so this genuinely downloads and runs:</p>
+  <pre><span class="c"># run_tinyllama.py (essence)</span>
+<span class="k">import</span> torch, rvo                                 <span class="c"># importing rvo registers the device</span>
+<span class="k">from</span> transformers <span class="k">import</span> AutoModelForCausalLM, AutoTokenizer
+tok   = AutoTokenizer.from_pretrained(<span class="s">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>)
+model = AutoModelForCausalLM.from_pretrained(
+            <span class="s">"TinyLlama/TinyLlama-1.1B-Chat-v1.0"</span>, dtype=torch.float32,
+            attn_implementation=<span class="s">"eager"</span>).eval().to(<span class="s">"rvo"</span>)   <span class="c"># eager attn -- see note below</span>
+ids = tok(prompt, return_tensors=<span class="s">"pt"</span>).input_ids.to(<span class="s">"rvo"</span>)
+<span class="k">for</span> _ <span class="k">in</span> range(<span class="n">24</span>):                                <span class="c"># 5-line manual greedy decode</span>
+    nxt = model(ids).logits[:, -<span class="n">1</span>].argmax(-<span class="n">1</span>, keepdim=<span class="n">True</span>)
+    ids = torch.cat([ids, nxt], dim=<span class="n">1</span>)
+print(tok.decode(ids[<span class="n">0</span>]))</pre>
+  <p class="mut">Needs <code>pip install transformers</code> + a ~2.2&nbsp;GB download (no Hugging Face gating). We ran
+  exactly this against openreg, RVO's in-tree twin &mdash; captured below.</p>
+
+  <h3>Why it runs: the dispatch story</h3>
+  <p>A Llama forward is an embedding, a stack of (RMSNorm, rotary attention, SwiGLU MLP), and a final projection.
+  RVO implements <b>none</b> of that math &mdash; only the six memory/layout ops. Everything else routes to the CPU
+  fallback. Probed live on the device:</p>
+  <table>
+    <tr><th>ATen op</th><th>Has a PrivateUse1 kernel?</th><th>Runs as</th></tr>
+    <tr><td><code>empty.memory_format</code>, <code>empty_strided</code>, <code>_copy_from</code>, <code>view</code>, <code>as_strided</code>, <code>_local_scalar_dense</code></td><td>yes</td><td><span class="badge b-req">core kernel</span> on device</td></tr>
+    <tr><td><code>mm</code>, <code>addmm</code>, <code>bmm</code> (all the Linears + attention scores)</td><td>no</td><td><span class="badge b-stub">CPU fallback</span></td></tr>
+    <tr><td><code>embedding</code>, <code>_softmax</code>, <code>silu</code></td><td>no</td><td><span class="badge b-stub">CPU fallback</span></td></tr>
+    <tr><td><code>mul</code>, <code>rsqrt</code>, <code>mean</code> (RMSNorm, rotary), <code>cat</code>, <code>argmax</code>, <code>triu</code></td><td>no</td><td><span class="badge b-stub">CPU fallback</span></td></tr>
+  </table>
+  <p>That is the spine in one table: the device supplies <b>memory and layout</b>; the fallback supplies <b>math</b>;
+  Llama runs. You make it fast later by replacing fallback rows with real kernels (Chapter 7), the heaviest first
+  (<code>mm</code>/<code>addmm</code>).</p>
+
+  <div class="note warn"><div class="t">Two rough edges for a brand-new backend</div>An op-by-op diff against CPU
+  shows every op is bit-exact on the device <b>except the fused</b> <code>scaled_dot_product_attention</code>
+  (maxdiff ~2.6) &mdash; so TinyLlama is loaded with <code>attn_implementation="eager"</code> (plain matmul + softmax,
+  which the fallback reproduces exactly). Second, HF <code>generate()</code> mixes a CPU pad-token tensor with device
+  tensors, so we drive a 5-line manual greedy loop instead. Both are gaps a real backend closes (implement SDPA; fix
+  the stray CPU tensor) &mdash; neither stops the model from running.</div>
+
+  <h3>Captured live</h3>
+  <p>Built RVO's in-tree twin (openreg) at the pinned commit and ran the <b>real TinyLlama-1.1B-Chat (1.10B params,
+  ungated)</b> end to end on it &mdash; a prompt in, real text out, every tensor on <code>openreg:0</code>:</p>
+  <pre>$ python -c "import torch, torch_openreg; x=torch.empty(3,device='openreg'); ..."
+empty.device= openreg:0
+add via fallback -&gt; [3.0, 3.0, 3.0]
+accelerator= openreg
+
+$ RVO_BACKEND=torch_openreg RVO_DEV=openreg python run_tinyllama.py
+loaded TinyLlama/TinyLlama-1.1B-Chat-v1.0: 1.10B params
+model on device: openreg:0
+output tensor device: openreg:0
+=== GENERATED TEXT ===
+The capital of France is Paris.
+=== END ===
+greedy-decoded 8 tokens on 'openreg' in 77.7s (0.10 tok/s, no KV cache)</pre>
+  <p class="mut">That answer is the genuine model output &mdash; <b>bit-for-bit identical to a plain-CPU run</b>
+  (<code>RVO_DEV=cpu</code>). The whole transformer computes: every matmul, softmax and norm via the fallback, the
+  allocations and copies via the six core kernels. Slow (no KV cache, no native kernels), but correct.</p>
+
+  <div class="note warn"><div class="t">What's real, what's stand-in</div>The API in every snippet is genuine
+  (anchored to openreg). The run is <b>real</b>: TinyLlama-1.1B-Chat (1.10B params) executed end to end on openreg
+  (RVO's in-tree twin) at this commit and printed "The capital of France is Paris.", matching CPU. The only stand-in
+  is <code>csrc/rvo.cpp</code> &mdash; a reading skeleton; lift the real, compilable bodies from openreg's
+  <code>csrc/</code>.</div>
+  <p>Companion package (the patch / pseudo-code): <code>agent_space/rvo/</code> &mdash; the files above, the real
+  <code>run_tinyllama.py</code>, and the captured logs.</p>
+</section>
+
+<hr class="hr">
+
+<!-- ================= COLOPHON ================= -->
+<section id="colophon">
+  <div class="ch">Colophon</div>
+  <h2>How to verify this book</h2>
+  <p>Pinned to commit <code>0a327fa9ec5</code> of <code>pytorch/pytorch</code>. Every pill is a permalink at that
+  commit; line numbers drift, so on newer checkouts search for the named symbol instead. The reference backend,
+  <b>torch_openreg</b>, is real and runnable — it is the source of every concrete example here, and PyTorch tests it
+  in CI.</p>
+  <p>This is a source-anchored book, not a captured-output one: it explains a mechanism rather than a single run, so
+  the ground truth is the source lines themselves (and the openreg tests that exercise them). If anything here
+  disagrees with the source, the source wins — that is the point of anchoring every claim.</p>
+  <h3>Build and exercise the reference backend</h3>
+  <pre><span class="c"># from the openreg package root</span>
+cd test/cpp_extensions/open_registration_extension/torch_openreg
+pip install -e . --no-build-isolation
+python -c <span class="s">"import torch, torch_openreg; print(torch.empty(3, device='openreg') + 1)"</span>
+python -m pytest tests/         <span class="c"># device, ops, rng, storage, streams, autocast...</span></pre>
+  <h3>Validate this file</h3>
+  <pre>python -c <span class="s">"import re, esprima; esprima.parseScript(re.search(r'&lt;script&gt;(.*)&lt;/script&gt;', open('books/device-registration.html').read(), re.S).group(1)); print('JS OK')"</span></pre>
+</section>
+
+</main>
+</div>
+
+<footer>
+  <div>Register a New Device &mdash; the minimum-effort path. Spine: a backend is a fixed set of slots PyTorch
+  cannot guess; fill the required ones, let <code>PrivateUse1</code> + a CPU fallback cover the rest. Source-anchored
+  to <code>pytorch/pytorch@0a327fa9ec5</code>. Reference backend: torch_openreg.</div>
+</footer>
+
+<script>
+const SHA="0a327fa9ec53035748b747c16c6f97a6bdae764a";
+const GH="https://github.com/pytorch/pytorch/blob/"+SHA+"/";
+const pill=(p,l)=>`<a class="src" target="_blank" href="${GH}${p}#L${l}">${p.split("/").pop()}:${l}</a>`;
+const OR="test/cpp_extensions/open_registration_extension/torch_openreg/";
+/* i18n helpers */
+const isZh=()=>document.documentElement.dataset.lang==="zh";
+const pk=(o,k)=>(isZh()&&o[k+"_zh"]!=null)?o[k+"_zh"]:o[k];
+let curStep=0,curAct=null,curOp=null;
+
+/* ---------- Ch1 end-to-end steps ---------- */
+const STEPS=[
+ {t:"Name the key",t_zh:"命名分派鍵",tag:"req",d:"claim PrivateUse1",d_zh:"認領 PrivateUse1",path:OR+"torch_openreg/__init__.py",line:17,
+  body:`<b>What:</b> tell PyTorch the shared out-of-tree key <code>PrivateUse1</code> is now called your name, so <code>device="mydev"</code> parses. <b>Why:</b> it is the anchor every other slot keys off. <b>Min:</b> one call, <code>rename_privateuse1_backend("mydev")</code>. <b>CUDA:</b> never renames &mdash; its key is baked in at ${pill("c10/core/DispatchKey.h",38)}.`,
+  body_zh:`<b>是什麼：</b>告訴 PyTorch 那把共用的樹外鍵 <code>PrivateUse1</code> 從此叫你的名字，這樣 <code>device="mydev"</code> 才解析得出來。<b>為何：</b>它是其他所有插槽的錨點。<b>最小：</b>一行 <code>rename_privateuse1_backend("mydev")</code>。<b>CUDA：</b>從不改名&mdash;它的鍵在 ${pill("c10/core/DispatchKey.h",38)} 就寫死了。`},
+ {t:"Device guard",t_zh:"裝置守衛",tag:"req",d:"drive device context",d_zh:"驅動裝置情境",path:OR+"csrc/runtime/OpenRegGuard.cpp",line:6,
+  body:`<b>What:</b> one C++ object that gets/sets the current device and hands out streams. <b>Why:</b> the RAII device guards and <code>torch.accelerator</code> dispatch through it. <b>Min:</b> the six device methods; event methods can stay throwing stubs. <b>Register:</b> <code>C10_REGISTER_GUARD_IMPL(PrivateUse1, ...)</code>. <b>CUDA:</b> ${pill("c10/cuda/impl/CUDAGuardImpl.cpp",5)}.`,
+  body_zh:`<b>是什麼：</b>一個 C++ 物件，負責讀/寫目前裝置並發放 stream。<b>為何：</b>RAII 裝置守衛與 <code>torch.accelerator</code> 都經由它分派。<b>最小：</b>六個裝置方法；event 方法可留著會丟例外的預設樁。<b>註冊：</b><code>C10_REGISTER_GUARD_IMPL(PrivateUse1, ...)</code>。<b>CUDA：</b>${pill("c10/cuda/impl/CUDAGuardImpl.cpp",5)}。`},
+ {t:"Allocator",t_zh:"配置器",tag:"req",d:"get & free bytes",d_zh:"取得與釋放位元組",path:OR+"csrc/runtime/OpenRegDeviceAllocator.cpp",line:273,
+  body:`<b>What:</b> an allocator whose <code>allocate()</code> calls your malloc and returns a self-freeing <code>DataPtr</code>. <b>Why:</b> tensors need bytes. <b>Min:</b> plain malloc/free, no caching (openreg's <code>emptyCache</code>/<code>recordStream</code> are no-ops). <b>Register:</b> <code>REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &g)</code>. <b>CUDA:</b> ${pill("c10/cuda/CUDACachingAllocator.cpp",5381)}.`,
+  body_zh:`<b>是什麼：</b>一個配置器，其 <code>allocate()</code> 呼叫你的 malloc 並回傳會自我釋放的 <code>DataPtr</code>。<b>為何：</b>張量需要位元組。<b>最小：</b>單純 malloc/free、不做快取（openreg 的 <code>emptyCache</code>/<code>recordStream</code> 都是空操作）。<b>註冊：</b><code>REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &g)</code>。<b>CUDA：</b>${pill("c10/cuda/CUDACachingAllocator.cpp",5381)}。`},
+ {t:"Hooks",t_zh:"掛鉤",tag:"req",d:"answer generic Q's",d_zh:"回答通用提問",path:OR+"csrc/runtime/OpenRegHooks.cpp",line:6,
+  body:`<b>What:</b> one object answering "available? how many devices? default generator? pinned ptr?". <b>Why:</b> generic CPU-side code asks the device through here. <b>Min:</b> override the few hooks you use; the rest throw lazily. <b>Register:</b> <code>RegisterPrivateUse1HooksInterface(new MyHooks())</code> once. <b>CUDA:</b> ${pill("aten/src/ATen/cuda/detail/CUDAHooks.cpp",589)}.`,
+  body_zh:`<b>是什麼：</b>一個物件，回答「可用嗎？幾個裝置？預設 generator？是否 pinned 指標？」。<b>為何：</b>通用的 CPU 端程式碼透過它詢問裝置。<b>最小：</b>只覆寫你會用到的少數掛鉤，其餘在被呼叫時才丟例外。<b>註冊：</b><code>RegisterPrivateUse1HooksInterface(new MyHooks())</code> 一次。<b>CUDA：</b>${pill("aten/src/ATen/cuda/detail/CUDAHooks.cpp",589)}。`},
+ {t:"Ops + fallback",t_zh:"運算 + 回退",tag:"req",d:"~10 kernels + CPU catch-all",d_zh:"~10 個 kernel + CPU 全包",path:OR+"csrc/aten/OpenRegMinimal.cpp",line:119,
+  body:`<b>What:</b> hand-write ~10 byte-moving ops (<code>empty</code>, <code>_copy_from</code>, <code>view</code>...) and one wildcard fallback to CPU. <b>Why:</b> the other ~3490 ops route through the fallback. <b>Min:</b> <code>TORCH_LIBRARY_IMPL(aten, PrivateUse1)</code> + <code>TORCH_LIBRARY_IMPL(_, PrivateUse1){ m.fallback(...) }</code>. <b>CUDA:</b> declarative <code>dispatch:</code> in ${pill("aten/src/ATen/native/native_functions.yaml",2324)} (codegen). See Chapter 4.`,
+  body_zh:`<b>是什麼：</b>手寫約 10 個搬移位元組的運算（<code>empty</code>、<code>_copy_from</code>、<code>view</code>…）以及一個通配回退到 CPU。<b>為何：</b>其餘約 3490 個運算都走這個回退。<b>最小：</b><code>TORCH_LIBRARY_IMPL(aten, PrivateUse1)</code> + <code>TORCH_LIBRARY_IMPL(_, PrivateUse1){ m.fallback(...) }</code>。<b>CUDA：</b>在 ${pill("aten/src/ATen/native/native_functions.yaml",2324)} 用宣告式 <code>dispatch:</code>（codegen）。見第 4 章。`},
+ {t:"Python module",t_zh:"Python 模組",tag:"req",d:"torch.mydev.*",d_zh:"torch.mydev.*",path:OR+"torch_openreg/__init__.py",line:18,
+  body:`<b>What:</b> hand PyTorch a small module of runtime functions and generate tensor methods. <b>Why:</b> users want <code>torch.mydev.device_count()</code> and <code>x.mydev()</code>. <b>Min:</b> <code>_register_device_module</code> + <code>generate_methods_for_privateuse1_backend</code>; module needs <code>device_count/current_device/set_device/is_available</code>. <b>Free:</b> <code>torch.accelerator.*</code> then works. <b>CUDA:</b> <code>from torch import cuda</code> ${pill("torch/__init__.py",2300)}.`,
+  body_zh:`<b>是什麼：</b>把一個含執行期函式的小模組交給 PyTorch，並產生張量方法。<b>為何：</b>使用者想要 <code>torch.mydev.device_count()</code> 與 <code>x.mydev()</code>。<b>最小：</b><code>_register_device_module</code> + <code>generate_methods_for_privateuse1_backend</code>；模組需有 <code>device_count/current_device/set_device/is_available</code>。<b>免費：</b>之後 <code>torch.accelerator.*</code> 即可運作。<b>CUDA：</b><code>from torch import cuda</code> ${pill("torch/__init__.py",2300)}。`},
+ {t:"Build & run",t_zh:"建置與執行",tag:"req",d:"package, install, smoke test",d_zh:"打包、安裝、煙霧測試",path:OR+"setup.py",line:116,
+  body:`<b>What:</b> compile your <code>csrc/*.cpp</code> into a library, link it into a Python <code>_C</code> extension, optionally add an autoload entry point. <b>Why:</b> the static registrars only run if the library loads. <b>Min:</b> CMake glob + <code>setup.py</code> Extension; then <code>torch.empty(3, device="mydev")</code> must run. <b>CUDA:</b> compiled into <code>libtorch_cuda</code>, no entry point. See Chapter 6.`,
+  body_zh:`<b>是什麼：</b>把你的 <code>csrc/*.cpp</code> 編成函式庫、連結進 Python <code>_C</code> 擴充，並可選擇加上 autoload 進入點。<b>為何：</b>靜態註冊器只有在函式庫被載入時才會執行。<b>最小：</b>CMake glob + <code>setup.py</code> Extension；接著 <code>torch.empty(3, device="mydev")</code> 必須能跑。<b>CUDA：</b>編進 <code>libtorch_cuda</code>，無進入點。見第 6 章。`},
+];
+const TAGTXT={req:"must write",req_zh:"必寫",stub:"stub ok",stub_zh:"可樁",free:"free",free_zh:"免費",later:"later",later_zh:"之後"};
+const pipeEl=document.getElementById("pipe"),sdEl=document.getElementById("stepDetail");
+function renderSteps(){pipeEl.innerHTML="";
+ STEPS.forEach((s,i)=>{const d=document.createElement("div");d.className="stage"+(i===curStep?" sel":"");
+  d.innerHTML=`<span class="tag badge b-${s.tag}">${pk(TAGTXT,s.tag)}</span><div class="st">${i+1}. ${pk(s,"t")}</div><div class="sd">${pk(s,"d")}</div>`;
+  d.onclick=()=>selStep(i);pipeEl.appendChild(d);});}
+function selStep(i){curStep=i;
+ document.querySelectorAll("#pipe .stage").forEach((e,j)=>e.classList.toggle("sel",j===i));
+ const s=STEPS[i];sdEl.innerHTML=`<div class="hd"><span class="ttl">${i+1} &middot; ${pk(s,"t")}</span>${pill(s.path,s.line)}</div><div class="bd">${pk(s,"body")}</div>`;}
+
+/* ---------- Ch2 slot lookup ---------- */
+const SLOTS=[
+ {id:"name",n:"Dispatch key + name",n_zh:"分派鍵 + 名稱"},
+ {id:"guard",n:"Device guard",n_zh:"裝置守衛"},
+ {id:"alloc",n:"Device allocator",n_zh:"裝置配置器"},
+ {id:"host",n:"Host / pinned allocator",n_zh:"主機 / pinned 配置器"},
+ {id:"hooks",n:"Hooks interface",n_zh:"掛鉤介面"},
+ {id:"gen",n:"Generator (RNG)",n_zh:"產生器 (RNG)"},
+ {id:"ops",n:"Operators + fallback",n_zh:"運算 + 回退"},
+ {id:"pymod",n:"Python device module",n_zh:"Python 裝置模組"},
+ {id:"core",n:"Core defaults (free)",n_zh:"核心預設（免費）"},
+];
+const ACTS=[
+ {c:`torch.empty(2, device="x")`,slots:["ops","alloc","guard"],
+  v:`Routes to the <b>empty</b> kernel, which asks your <b>allocator</b> for bytes on the <b>current device</b> (the guard). ${pill(OR+"csrc/aten/native/Minimal.cpp",26)}`,
+  v_zh:`走到 <b>empty</b> kernel，它向你的<b>配置器</b>要在<b>目前裝置</b>（守衛）上的位元組。${pill(OR+"csrc/aten/native/Minimal.cpp",26)}`},
+ {c:`with torch.device("x", 1):`,slots:["guard"],
+  v:`Pure <b>guard</b>: <code>exchangeDevice</code> sets device 1 and returns the old one to restore on exit. ${pill(OR+"csrc/runtime/OpenRegGuard.h",35)}`,
+  v_zh:`純<b>守衛</b>：<code>exchangeDevice</code> 切到裝置 1 並回傳舊裝置，離開時還原。${pill(OR+"csrc/runtime/OpenRegGuard.h",35)}`},
+ {c:`torch.x.device_count()`,slots:["pymod","hooks"],
+  v:`Your <b>Python module</b> forwards to the C runtime (often via the <b>hooks</b>/<code>_C</code> bridge). ${pill(OR+"torch_openreg/openreg/__init__.py",36)}`,
+  v_zh:`你的 <b>Python 模組</b>轉發到 C 執行期（常經由<b>掛鉤</b>/<code>_C</code> 橋接）。${pill(OR+"torch_openreg/openreg/__init__.py",36)}`},
+ {c:`a.to("x"); a.cpu()`,slots:["ops"],
+  v:`The <b>_copy_from</b> kernel &mdash; the engine of cross-device copy, and the load-bearing core of the CPU fallback. ${pill(OR+"csrc/aten/native/Minimal.cpp",81)}`,
+  v_zh:`<b>_copy_from</b> kernel&mdash;跨裝置複製的引擎，也是 CPU 回退賴以運作的核心。${pill(OR+"csrc/aten/native/Minimal.cpp",81)}`},
+ {c:`torch.randn(3, device="x")`,slots:["gen","hooks","ops"],
+  v:`The <b>hooks</b> hand back the <b>default generator</b> for the device; random fills run through it. ${pill(OR+"csrc/runtime/OpenRegHooks.h",85)}`,
+  v_zh:`<b>掛鉤</b>交回該裝置的<b>預設產生器</b>；隨機填值都經過它。${pill(OR+"csrc/runtime/OpenRegHooks.h",85)}`},
+ {c:`a.pin_memory()`,slots:["host","hooks"],
+  v:`The <b>hooks</b>' <code>getPinnedMemoryAllocator</code> returns your <b>host allocator</b>. Skip it and pin just won't accelerate. ${pill(OR+"csrc/runtime/OpenRegHooks.h",63)}`,
+  v_zh:`<b>掛鉤</b>的 <code>getPinnedMemoryAllocator</code> 回傳你的<b>主機配置器</b>。略過它，pin 只是不會加速。${pill(OR+"csrc/runtime/OpenRegHooks.h",63)}`},
+ {c:`torch.accelerator.current_accelerator()`,slots:["name","core"],
+  v:`<span class="badge b-free">free</span> Because the <b>key is named</b>, core picks PrivateUse1 as the accelerator &mdash; no Python wiring. ${pill("aten/src/ATen/DeviceAccelerator.cpp",8)}`,
+  v_zh:`<span class="badge b-free">free</span> 因為<b>鍵已命名</b>，核心便選 PrivateUse1 為加速器&mdash;不需 Python 接線。${pill("aten/src/ATen/DeviceAccelerator.cpp",8)}`},
+ {c:`loss.backward()`,slots:["core","ops"],
+  v:`<span class="badge b-free">free</span> A generic <b>AutogradPrivateUse1</b> fallback lets forward pass through; you write no autograd code for inference. ${pill("aten/src/ATen/core/VariableFallbackKernel.cpp",111)}`,
+  v_zh:`<span class="badge b-free">free</span> 一個通用的 <b>AutogradPrivateUse1</b> 回退讓前向通過；推論時你不必寫任何 autograd 程式碼。${pill("aten/src/ATen/core/VariableFallbackKernel.cpp",111)}`},
+ {c:`model(x)  # op with no kernel`,slots:["ops"],
+  v:`No PrivateUse1 kernel &rarr; the wildcard <b>CPU fallback</b>: move to CPU, run, copy back. ${pill(OR+"csrc/aten/OpenRegMinimal.cpp",141)}`,
+  v_zh:`沒有 PrivateUse1 kernel &rarr; 通配的 <b>CPU 回退</b>：搬到 CPU、執行、再複製回來。${pill(OR+"csrc/aten/OpenRegMinimal.cpp",141)}`},
+];
+const slotEl=document.getElementById("slotGrid"),actEl=document.getElementById("actChips"),avEl=document.getElementById("actVerdict");
+function renderSlots(){slotEl.innerHTML="";
+ SLOTS.forEach(s=>{const d=document.createElement("div");d.className="slot"+(curAct!==null&&ACTS[curAct].slots.includes(s.id)?" hi":"");
+  d.id="slot-"+s.id;d.innerHTML=`<div class="sl-n">${pk(s,"n")}</div>`;slotEl.appendChild(d);});}
+function renderActChips(){actEl.innerHTML="";
+ ACTS.forEach((a,i)=>{const c=document.createElement("span");c.className="achip"+(i===curAct?" on":"");
+  c.textContent=a.c;c.onclick=()=>selAct(i);actEl.appendChild(c);});}
+function actVerdictDefault(){avEl.innerHTML=isZh()
+  ?`<span class="mut">挑一行上面的使用者程式碼。它會點亮回答它的插槽&mdash;每一個都是你填過的（或免費取得的）。</span>`
+  :`<span class="mut">Pick a line of user code above. It lights up the slot(s) that answer it &mdash; each one is something you filled (or got for free).</span>`;}
+function selAct(i){curAct=i;
+ document.querySelectorAll("#actChips .achip").forEach((e,j)=>e.classList.toggle("on",j===i));
+ renderSlots();
+ avEl.innerHTML=`<code>${ACTS[i].c}</code><br>${pk(ACTS[i],"v")}`;}
+
+/* ---------- Ch4 operator ladder ---------- */
+const OQS=[
+ {ql:"Is a PrivateUse1 kernel registered?",ql_zh:"有註冊 PrivateUse1 kernel 嗎？",qs:"m.impl in TORCH_LIBRARY_IMPL(aten, PrivateUse1)",qs_zh:"TORCH_LIBRARY_IMPL(aten, PrivateUse1) 裡的 m.impl",
+  out:{cls:"o-kernel",txt:`<span class="badge b-req">your kernel</span> runs on-device`,txt_zh:`<span class="badge b-req">你的 kernel</span> 在裝置上執行`}},
+ {ql:"On the fallback blocklist?",ql_zh:"在回退黑名單上嗎？",qs:"forced to error instead of CPU fallback",qs_zh:"被強制報錯而非走 CPU 回退",
+  out:{cls:"o-err",txt:`<span class="badge b-later">error</span> raised on purpose &mdash; forces you to write a kernel`,txt_zh:`<span class="badge b-later">error</span> 刻意報錯&mdash;逼你去寫 kernel`}},
+ {ql:"otherwise",ql_zh:"否則",qs:"the wildcard fallback catches it",qs_zh:"通配回退接住它",
+  out:{cls:"o-fb",txt:`<span class="badge b-stub">CPU fallback</span> to CPU, run, copy back`,txt_zh:`<span class="badge b-stub">CPU 回退</span> 搬到 CPU、執行、複製回來`}},
+];
+const OPS=[
+ {n:"empty.memory_format",route:0,p:OR+"csrc/aten/OpenRegMinimal.cpp",l:120,
+  v:`<b>empty &rarr; your kernel.</b> A factory op must allocate device bytes, so you write it. One of the ~10 core ops.`,
+  v_zh:`<b>empty &rarr; 你的 kernel。</b>工廠運算必須配置裝置位元組，所以你得寫它。約 10 個核心運算之一。`},
+ {n:"_copy_from",route:0,p:OR+"csrc/aten/native/Minimal.cpp",l:81,
+  v:`<b>_copy_from &rarr; your kernel.</b> Powers <code>.copy_</code> and the fallback round-trip itself &mdash; the one kernel you cannot get wrong.`,
+  v_zh:`<b>_copy_from &rarr; 你的 kernel。</b>驅動 <code>.copy_</code> 以及回退本身的往返&mdash;這是你絕不能寫錯的 kernel。`},
+ {n:"view",route:0,p:OR+"csrc/aten/OpenRegMinimal.cpp",l:119,
+  v:`<b>view &rarr; your kernel.</b> Metadata-only (no copy), but it must produce a tensor on your device, so it is in the core set.`,
+  v_zh:`<b>view &rarr; 你的 kernel。</b>只動中繼資料（不複製），但必須產生你裝置上的張量，所以列入核心集合。`},
+ {n:"add.Tensor",route:2,p:OR+"csrc/aten/OpenRegMinimal.cpp",l:141,
+  v:`<b>add &rarr; CPU fallback.</b> No kernel needed at first: inputs go to CPU, add runs, result copies back. Write a native kernel later for speed.`,
+  v_zh:`<b>add &rarr; CPU 回退。</b>一開始不需 kernel：輸入搬到 CPU、執行 add、結果複製回來。日後為了速度再寫原生 kernel。`},
+ {n:"mm",route:2,p:OR+"csrc/aten/OpenRegMinimal.cpp",l:141,
+  v:`<b>mm &rarr; CPU fallback.</b> Same story &mdash; correct immediately, slow until you provide a GEMM kernel.`,
+  v_zh:`<b>mm &rarr; CPU 回退。</b>一樣&mdash;立刻就正確，在你提供 GEMM kernel 之前較慢。`},
+ {n:"nonzero",route:2,p:OR+"csrc/aten/OpenRegMinimal.cpp",l:141,
+  v:`<b>nonzero &rarr; CPU fallback.</b> Output size depends on data; the fallback handles it just fine for a first backend.`,
+  v_zh:`<b>nonzero &rarr; CPU 回退。</b>輸出大小依資料而定；對第一個後端而言回退處理得很好。`},
+ {n:"sub.Tensor",route:2,p:OR+"csrc/aten/OpenRegMinimal.cpp",l:148,
+  v:`<b>sub &rarr; CPU fallback (per-op).</b> openreg shows you can wire the boxed fallback to one op via <code>m.impl</code> instead of the global wildcard.`,
+  v_zh:`<b>sub &rarr; CPU 回退（逐運算）。</b>openreg 示範可用 <code>m.impl</code> 把 boxed 回退接到單一運算，而非全域通配。`},
+ {n:"abs",route:1,p:OR+"csrc/aten/native/Minimal.cpp",l:167,
+  v:`<b>abs &rarr; error.</b> openreg blocklists <code>abs</code> so it raises instead of silently using CPU &mdash; a deliberate nudge to write the native kernel (with its <code>abs.out</code> + <code>abs_stub</code>).`,
+  v_zh:`<b>abs &rarr; error。</b>openreg 把 <code>abs</code> 列入黑名單，使其報錯而非默默用 CPU&mdash;刻意提醒你去寫原生 kernel（連同 <code>abs.out</code> + <code>abs_stub</code>）。`},
+];
+const ochipsEl=document.getElementById("opChips"),oladderEl=document.getElementById("opLadder"),ovEl=document.getElementById("opVerdict");
+function renderOpChips(){ochipsEl.innerHTML="";
+ OPS.forEach((o,i)=>{const c=document.createElement("span");c.className="dchip"+(i===curOp?" on":"");
+  c.textContent="aten."+o.n;c.onclick=()=>selOp(i);ochipsEl.appendChild(c);});}
+function renderLadder(route){let h="";
+ OQS.forEach((q,qi)=>{
+   const visited=route!==null&&qi<=route;
+   const yes=visited&&qi===route;
+   h+=`<div class="lrow">
+     <div class="lq ${visited?"lit":""}"><div class="ql">${pk(q,"ql")}</div><div class="qs">${pk(q,"qs")}</div></div>
+     <div class="lyes"><div class="lout ${q.out.cls} ${yes?"lit":""}">${pk(q.out,"txt")}</div></div>
+   </div>`;
+   if(qi<OQS.length-1)h+=`<div class="lconn ${visited&&qi<route?"lit":""}"><div class="vl"></div><div class="lbl">${isZh()?"否":"no"} &darr;</div><div class="vl"></div></div>`;
+ });
+ oladderEl.innerHTML=h;}
+function opVerdictDefault(){ovEl.innerHTML=isZh()
+  ?`<span class="mut">挑一個運算。有 kernel 的在裝置上跑；列入黑名單的報錯；其餘全部回退到 CPU。最小心力＝只寫上面那一小撮。</span>`
+  :`<span class="mut">Pick an op. Ones with a kernel run on-device; blocklisted ones error; everything else falls back to CPU. Minimum effort = write only that small core.</span>`;}
+function selOp(i){curOp=i;
+ document.querySelectorAll("#opChips .dchip").forEach((e,j)=>e.classList.toggle("on",j===i));
+ const o=OPS[i];renderLadder(o.route);
+ ovEl.innerHTML=`${pk(o,"v")} &nbsp;${pill(o.p,o.l)}`;}
+
+/* ---------- static prose i18n ---------- */
+const PROSE=new Map([
+["The minimum-effort path","最省力的路徑"],
+["Preface · the one idea","前言 · 那一個核心想法"],
+["1 · The workflow, end to end","1 · 端到端的工作流程"],
+["2 · What \"register\" means","2 · 「註冊」到底是什麼意思"],
+["3 · The C++ runtime slots","3 · C++ 執行期插槽"],
+["4 · Operators with no kernels","4 · 幾乎不寫 kernel 的運算"],
+["5 · The Python surface","5 · Python 介面層"],
+["6 · Build, install, run","6 · 建置、安裝、執行"],
+["7 · Beyond the minimum","7 · 超越最小集"],
+["Colophon · verify this book","版本說明 · 如何驗證本書"],
+["Preface","前言"],
+["The one idea","那一個核心想法"],
+["PyTorch already knows how to do almost everything; it just does not know about your chip. A device backend is nothing more than a small, fixed set of slots that PyTorch cannot guess on its own — how to allocate memory, how to switch the current device, where the random generator lives, what a few core operators do. Here is the single idea this whole book hangs on: registering a device means filling those slots. Minimum effort means filling only the required ones, and letting one shared dispatch key (PrivateUse1) plus a CPU fallback cover the other ~3500 operators you did not write.","PyTorch 幾乎什麼都會做了；它只是不認識<b>你的</b>晶片。一個裝置後端，不過就是一小組固定的<b>插槽</b>，是 PyTorch 自己猜不出來的&mdash;怎麼配置記憶體、怎麼切換目前裝置、亂數產生器在哪、少數核心運算做什麼。這就是<b>貫穿全書的單一想法</b>：註冊一個裝置，就是<b>把這些插槽填滿</b>。最省力，就是<b>只填必填的</b>，並讓一把共用的分派鍵（<code>PrivateUse1</code>）加上一個 CPU 回退，去涵蓋其餘那約 3500 個你沒寫的運算。"],
+["CUDA fills the exact same slots. The only difference is when and where: CUDA is compiled into PyTorch, so its slots are hardwired in-tree and code-generated; your backend lives in its own package and fills the same slots at runtime, through PrivateUse1. Same holes, different filler. That symmetry is the spine — every chapter is a detail on it.","CUDA 填的是<b>完全相同</b>的插槽。唯一的差別是<b>時機與地點</b>：CUDA 編進了 PyTorch，所以它的插槽在樹內寫死、由 codegen 產生；你的後端住在自己的套件裡，於執行期透過 <code>PrivateUse1</code> 填同一批插槽。一樣的洞，不同的填料。這個對稱性就是主軸&mdash;每一章都是它的細節。"],
+["Every slot in this book is tagged with how much work it really costs you. These four tags mean the same thing on every table and widget:","本書每個插槽都標了它實際要花你多少工。這四個標籤在每張表、每個元件裡都是同一個意思："],
+["What it means","代表什麼"],
+["Minimum-effort move","最省力的做法"],
+["required, or the device does not work at all","必須，否則裝置根本不能用"],
+["write a thin version (openreg shows how small)","寫一個很薄的版本（openreg 示範可以多小）"],
+["must exist, but a no-op / CPU-backed stub is enough","必須存在，但空操作 / 由 CPU 撐著的樁就夠了"],
+["defer the real implementation","把真正的實作往後延"],
+["PyTorch gives it to you once the key is named","鍵一命名，PyTorch 就送你"],
+["do nothing","什麼都不用做"],
+["optional; add it when you outgrow the minimum","選用；等你超出最小集再加"],
+["skip for now","現在先跳過"],
+["The minimum-effort scoreboard","最省力計分板"],
+["The entire job, on one screen. This is the spine table; the rest of the book is one chapter per row.","整件工作，一個畫面看完。這是主軸表；本書其餘部分是每一列一章。"],
+["Slot","插槽"],
+["Effort","心力"],
+["The one call","那一個呼叫"],
+["CUDA does it at","CUDA 在哪做"],
+["Dispatch key + name","分派鍵 + 名稱"],
+["Device guard","裝置守衛"],
+["Device allocator","裝置配置器"],
+["Hooks interface","掛鉤介面"],
+["Core operators + fallback","核心運算 + 回退"],
+["Python device module","Python 裝置模組"],
+["Host / pinned allocator","主機 / pinned 配置器"],
+["Generator (RNG)","產生器 (RNG)"],
+["Autograd, autocast plumbing, serialization, torch.accelerator","Autograd、autocast 管線、序列化、torch.accelerator"],
+["nothing — named-key gives it to you","無&mdash;命名鍵就送你"],
+["Chapter 1","第 1 章"],
+["Chapter 2","第 2 章"],
+["Chapter 3","第 3 章"],
+["Chapter 4","第 4 章"],
+["Chapter 5","第 5 章"],
+["Chapter 6","第 6 章"],
+["Chapter 7","第 7 章"],
+["Colophon","版本說明"],
+["The workflow, end to end","端到端的工作流程"],
+["Six things to write, in order, and then you build and run. Click any step below to see what it does, why PyTorch needs it, the single registration call, the openreg line that proves it, and how small the minimum version can be. The order matters: each step assumes the ones before it.","六件事，照順序寫，然後建置並執行。<b>點下方任一步驟</b>，看它做什麼、PyTorch 為何需要它、那一個註冊呼叫、證明它的 openreg 行、以及最小版本可以多小。順序很重要：每一步都假設前面的步驟已就緒。"],
+["Steps 1 and 6 are Python (Chapter 5); steps 2–5 are C++ (Chapters 3–4); step 7 is packaging (Chapter 6). Everything tagged free on the scoreboard needs no step at all.","步驟 1 與 6 是 Python（第 5 章）；步驟 2&ndash;5 是 C++（第 3&ndash;4 章）；步驟 7 是打包（第 6 章）。計分板上標為 <span class=\"badge b-free\">free</span> 的東西完全不需要步驟。"],
+["The whole Python side, in three lines","整個 Python 端，三行搞定"],
+["At import time your package runs exactly this. Order is mandatory: name the key first, then hand PyTorch the module, then generate the convenience methods. openreg __init__.py:17:","在 import 時，你的套件就跑這幾行。順序是強制的：先命名鍵、再把模組交給 PyTorch、最後產生便利方法。openreg §test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/__init__.py:17§："],
+["The C++ registrations (steps 2–5) are not called from Python — they run automatically as static initializers when your shared library is loaded. You never call them; linking the .cpp in is what arms them.","C++ 的那些註冊（步驟 2&ndash;5）<b>不是</b>從 Python 呼叫的&mdash;它們在你的共享函式庫被載入時，以<em>靜態初始化器</em>自動執行。你從不呼叫它們；把 <code>.cpp</code> 連結進來，就是啟動它們的開關。"],
+["What \"register\" actually means","「註冊」到底是什麼意思"],
+["\"Registering\" is not magic — it is dropping a pointer into a global table. PyTorch keeps a handful of tables indexed by device type: one for guards, one for allocators, one pointer for hooks, a slot per operator. To register a device is to write your objects into those slots for the PrivateUse1 entry. After that, every piece of generic PyTorch code finds your code by looking up the table — it never needs to know it is talking to your chip.","「註冊」並不神奇&mdash;就是把一個指標放進全域表格。PyTorch 持有幾張以裝置型別索引的表：守衛一張、配置器一張、掛鉤一個指標、每個運算一個格子。註冊一個裝置，就是把你的物件寫進這些表的 <code>PrivateUse1</code> 欄位。此後，每一段通用的 PyTorch 程式碼都靠查表找到你的程式碼&mdash;它從不需要知道自己在跟你的晶片對話。"],
+["Pick a line of user code below and watch which slot answers it. This is the payoff of registration: ordinary user code routes, with no special-casing, into the slots you filled.","<b>挑一行下面的使用者程式碼</b>，看哪個插槽回答它。這就是註冊的回報：普通的使用者程式碼，毫無特例，直接路由進你填過的插槽。"],
+["The tables, concretely","這些表，具體來說"],
+["None of these are abstractions — they are plain global arrays/pointers you can point at:","這些都不是抽象概念&mdash;它們是你可以直接指向的全域陣列／指標："],
+["CUDA writes into the very same tables, just under the CUDA key instead of PrivateUse1 — its registrations are emitted by codegen and compiled into libtorch_cuda.","CUDA 寫進<b>完全相同</b>的表，只是用 <code>CUDA</code> 鍵而非 <code>PrivateUse1</code>&mdash;它的註冊由 codegen 產生並編進 <code>libtorch_cuda</code>。"],
+["The C++ runtime slots","C++ 執行期插槽"],
+["Four C++ objects do the heavy lifting: the guard (drive the device context), the allocator (get and free bytes), the hooks (answer generic questions), and the generator (random numbers). For minimum effort, openreg shows that each can be small — and that the parts you skip simply throw a clear error if anyone reaches them, rather than failing the build.","四個 C++ 物件承擔重活：<b>守衛</b>（驅動裝置情境）、<b>配置器</b>（取得與釋放位元組）、<b>掛鉤</b>（回答通用問題）、<b>產生器</b>（亂數）。談到最省力，openreg 證明每一個都可以很小&mdash;而你略過的部分，若有人觸及，只是丟出一個清楚的錯誤，而非讓建置失敗。"],
+["Operators with (almost) no kernels","幾乎不寫 kernel 的運算"],
+["PyTorch has ~3500 operators. The minimum-effort trick is to hand-write only a tiny core — the ones that allocate or move bytes — and register a single catch-all fallback that quietly ships every other op to the CPU, runs it there, and copies the result back. You replace fallbacks with native kernels later, one at a time, as you need speed.","PyTorch 有約 3500 個運算。最省力的訣竅是：只手寫一小撮核心&mdash;那些<b>配置或搬移位元組</b>的&mdash;再註冊一個<b>全包回退</b>，把其餘每個運算悄悄送去 CPU 執行、再把結果複製回來。日後當你需要速度，再一個一個用原生 kernel 取代回退。"],
+["Pick an operator and watch how it routes:","挑一個運算，看它如何路由："],
+["The two registration blocks that make this work — the minimal kernels, and the wildcard fallback:","讓這一切成立的兩個註冊區塊&mdash;最小 kernel 集，以及通配回退："],
+["Why _copy_from is the one kernel you cannot get wrong","為何 _copy_from 是你絕不能寫錯的那個 kernel"],
+["_copy_from is the engine of Tensor.copy_ and of all cross-device transfers — which means the CPU fallback itself rides on it (move inputs to CPU, run, copy back). If it is wrong, the fallback breaks, and with it the other ~3490 ops. Get this one right first. Minimal.cpp:81","<code>_copy_from</code> 是 <code>Tensor.copy_</code> 與所有跨裝置搬移的引擎&mdash;也就是說 CPU 回退本身就騎在它上面（把輸入搬到 CPU、執行、再複製回來）。它若錯了，回退就壞了，連帶其餘約 3490 個運算一起壞。先把這一個寫對。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/native/Minimal.cpp:81§"],
+["Two things you get for free, and one trap","兩樣免費的東西，以及一個陷阱"],
+["The Python surface","Python 介面層"],
+["Three lines make torch.mydev.* and tensor.mydev() work, plus a small Python module of runtime functions. The payoff is big: once the key is named, your backend shows up under the generic torch.accelerator.* API automatically.","三行就讓 <code>torch.mydev.*</code> 與 <code>tensor.mydev()</code> 能用，再加一個含執行期函式的小 Python 模組。回報很大：鍵一旦命名，你的後端就自動出現在通用的 <code>torch.accelerator.*</code> API 之下。"],
+["Step 1, name the key, must come first — it is what makes \"mydev\" a valid device string and aliases the profiler and autograd enums. Then hand PyTorch your module and generate the convenience methods:","步驟 1（命名鍵）必須<b>最先</b>&mdash;是它讓 <code>\"mydev\"</code> 成為合法的裝置字串，並把 profiler 與 autograd 列舉一併別名。接著把你的模組交給 PyTorch，並產生便利方法："],
+["Your device module just needs the handful of names PyTorch and torch.accelerator look up by convention. Minimum set:","你的裝置模組只需要 PyTorch 與 <code>torch.accelerator</code> 按慣例查找的那幾個名字。最小集合："],
+["Function","函式"],
+["What it answers","它回答什麼"],
+["how many devices exist","有幾個裝置"],
+["which one is active","哪一個在作用中"],
+["switch the active device","切換作用中的裝置"],
+["is the backend usable at all","後端到底能不能用"],
+["lazy-init bookkeeping","延遲初始化的記帳"],
+["These typically forward to your C extension (e.g. torch_openreg._C._get_device_count()). openreg's module: __init__.py:36.","這些通常轉發到你的 C 擴充（例如 <code>torch_openreg._C._get_device_count()</code>）。openreg 的模組：§test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/openreg/__init__.py:36§。"],
+["Build, install, run","建置、安裝、執行"],
+["The C++ registrations only exist if their .cpp files are compiled into a library that actually loads. So packaging is the last required step: build the native library, link it into a Python _C extension, and (optionally) declare an entry point so import torch loads you automatically.","C++ 的那些註冊，只有在它們的 <code>.cpp</code> 被編進一個<b>真的會載入</b>的函式庫時才存在。所以打包是最後一個必填步驟：建出原生函式庫、把它連進 Python <code>_C</code> 擴充，並（選擇性地）宣告一個進入點，讓 <code>import torch</code> 自動載入你。"],
+["If those three lines run, every required slot is filled. That is a registered device.","那三行若能跑，每個必填插槽就都填好了。這就是一個已註冊的裝置。"],
+["The two libraries (a common point of confusion)","兩個函式庫（常見的混淆點）"],
+["Autoload: a no-op entry point, and a build-time guard","Autoload：一個空操作進入點，與一道建置期防護"],
+["Beyond the minimum","超越最小集"],
+["Everything above gets a device that runs. These are the upgrades — each one optional, each one a separate slot you fill when you need it. None block a first working backend.","以上一切，給你一個會跑的裝置。以下是升級&mdash;每一項都是選用的，每一項都是你需要時才填的獨立插槽。沒有一項會擋住第一個能用的後端。"],
+["Upgrade","升級"],
+["What you add","你要加什麼"],
+["Anchor","出處"],
+["Each of these has its own chapter in PyTorch's official accelerator guide (docs/source/accelerator/); this book deliberately stops at the minimum that makes torch.empty(device=\"mydev\") run.","以上每一項在 PyTorch 官方加速器指南（<code>docs/source/accelerator/</code>）裡都有專章；本書刻意止步於「讓 <code>torch.empty(device=\"mydev\")</code> 能跑」的最小集。"],
+["How to verify this book","如何驗證本書"],
+["Pinned to commit 0a327fa9ec5 of pytorch/pytorch. Every pill is a permalink at that commit; line numbers drift, so on newer checkouts search for the named symbol instead. The reference backend, torch_openreg, is real and runnable — it is the source of every concrete example here, and PyTorch tests it in CI.","固定在 <code>pytorch/pytorch</code> 的 commit <code>0a327fa9ec5</code>。每個藥丸都是該 commit 的永久連結；行號會漂移，在較新的 checkout 上請改搜尋指名的符號。參考後端 <b>torch_openreg</b> 是真實且可執行的&mdash;它是本書每個具體範例的來源，且 PyTorch 在 CI 中對它做測試。"],
+["This is a source-anchored book, not a captured-output one: it explains a mechanism rather than a single run, so the ground truth is the source lines themselves (and the openreg tests that exercise them). If anything here disagrees with the source, the source wins — that is the point of anchoring every claim.","這是一本<b>錨定原始碼</b>的書，而非擷取輸出的書：它解釋一套機制、而非單次執行，所以基準事實就是那些原始碼行本身（以及操練它們的 openreg 測試）。若本書任何內容與原始碼不符，以原始碼為準&mdash;這正是為每個論述錨定出處的意義。"],
+["Build and exercise the reference backend","建置並操練參考後端"],
+["Validate this file","驗證本檔案"],
+["must write","<span class=\"badge b-req\">必寫</span>"],
+["stub ok","<span class=\"badge b-stub\">可樁</span>"],
+["free","<span class=\"badge b-free\">免費</span>"],
+["later","<span class=\"badge b-later\">之後</span>"],
+["How to read this book Chapter 1 is the spine: an interactive end-to-end checklist — click each step to see what it is, why it exists, and how small it can be. Chapter 2 shows what \"register\" means to the dispatcher — pick a line of user code, watch which slot answers it. Chapter 4 is a routing widget for operators. Everything behind a ▶ is detail-on-demand. Every claim carries a pill like __init__.py:17 linking the exact source line, pinned to the commit this book was verified against. The reference backend is torch_openreg, PyTorch's official, runnable example of this whole path.","<div class=\"t\">如何閱讀本書</div>第 1 章是主軸：一份<b>互動式端到端檢查表</b>—點每個步驟，看它是什麼、為何存在、可以多小。第 2 章說明「註冊」對 dispatcher 的意義—挑一行使用者程式碼，看哪個插槽回答它。第 4 章是運算的路由元件。任何 <code>▶</code> 之後的內容都是隨點隨開。每個論述都帶一個藥丸，像 §test/cpp_extensions/open_registration_extension/torch_openreg/torch_openreg/__init__.py:17§，連到確切的原始碼行，固定在本書驗證所用的 commit。參考後端是 <b>torch_openreg</b>，PyTorch 官方、可執行的完整範例。"],
+["Guards: a fixed array indexed by DeviceType; C10_REGISTER_GUARD_IMPL writes a new-ed instance into your slot (DeviceGuardImplInterface.h:379).","<b>守衛：</b>一個以 <code>DeviceType</code> 索引的固定陣列；<code>C10_REGISTER_GUARD_IMPL</code> 把一個 <code>new</code> 出來的實例寫進你的格子（§c10/core/impl/DeviceGuardImplInterface.h:379§）。"],
+["Allocators: a table keyed by DeviceType; REGISTER_ALLOCATOR calls SetAllocator (Allocator.h:299).","<b>配置器：</b>一張以 <code>DeviceType</code> 為鍵的表；<code>REGISTER_ALLOCATOR</code> 呼叫 <code>SetAllocator</code>（§c10/core/Allocator.h:299§）。"],
+["Hooks: a single process-global pointer set once by RegisterPrivateUse1HooksInterface (PrivateUse1HooksInterface.cpp:8).","<b>掛鉤：</b>一個由 <code>RegisterPrivateUse1HooksInterface</code> 設定一次的行程全域指標（§aten/src/ATen/detail/PrivateUse1HooksInterface.cpp:8§）。"],
+["Operators: the dispatcher's per-operator table; TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) writes one kernel into the PrivateUse1 column (OpenRegMinimal.cpp:119).","<b>運算：</b>dispatcher 的逐運算表；<code>TORCH_LIBRARY_IMPL(aten, PrivateUse1, m)</code> 把一個 kernel 寫進 <code>PrivateUse1</code> 欄（§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp:119§）。"],
+["must write The device guard","<span class=\"badge b-req\">必寫</span> 裝置守衛"],
+["Feynman: PyTorch needs a generic way to ask \"which device am I on?\", \"switch to device 1 and back\", \"give me a stream\". It cannot call your driver directly, so you write one object with those methods and drop it in the guard table. The RAII DeviceGuard users rely on is built on top.","<b>白話：</b>PyTorch 需要一個通用方式去問「我現在在哪個裝置？」「切到裝置 1 再切回來」「給我一條 stream」。它不能直接呼叫你的驅動，所以你寫一個帶這些方法的物件，丟進守衛表。使用者倚賴的 RAII <code>DeviceGuard</code> 就建在它之上。"],
+["Subclass c10::impl::DeviceGuardImplInterface, mark it final, set static_type = DeviceType::PrivateUse1, and register it:","繼承 <code>c10::impl::DeviceGuardImplInterface</code>，標記為 <code>final</code>，設定 <code>static_type = DeviceType::PrivateUse1</code>，然後註冊它："],
+["Minimum effort: implement the six device methods (type, getDevice, setDevice, uncheckedSetDevice, exchangeDevice, deviceCount) plus getStream/exchangeStream. The event methods have throwing default bodies, so a backend that ignores streams/events still compiles — code that touches them just errors at runtime. OpenRegGuard.cpp:6 · interface DeviceGuardImplInterface.h:60 · CUDA twin CUDAGuardImpl.h:23","<b>最小心力：</b>實作六個裝置方法（<code>type</code>、<code>getDevice</code>、<code>setDevice</code>、<code>uncheckedSetDevice</code>、<code>exchangeDevice</code>、<code>deviceCount</code>）加上 <code>getStream</code>/<code>exchangeStream</code>。event 方法有<b>會丟例外的預設實作</b>，所以忽略 stream/event 的後端仍可編譯—碰到它們的程式碼只是在執行期報錯。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGuard.cpp:6§ · 介面 §c10/core/impl/DeviceGuardImplInterface.h:60§ · CUDA 雙生 §c10/cuda/impl/CUDAGuardImpl.h:23§"],
+["GotchadeviceCount() and uncheckedSetDevice() are noexcept by contract: deviceCount must report 0 on a driver error, never throw. And the struct must be final so the compiler can devirtualize the hot exchangeDevice call.","<div class=\"t\">注意</div><code>deviceCount()</code> 與 <code>uncheckedSetDevice()</code> 依約定是 <code>noexcept</code>：<code>deviceCount</code> 在驅動錯誤時必須回報 <b>0</b>，絕不可丟例外。而且這個 struct 必須是 <code>final</code>，編譯器才能對熱路徑上的 <code>exchangeDevice</code> 去虛擬化。"],
+["must write The allocator (and stub ok pinned memory)","<span class=\"badge b-req\">必寫</span> 配置器（以及 <span class=\"badge b-stub\">可樁</span> 的 pinned 記憶體）"],
+["Feynman: tensor bytes have to come from somewhere. You write an allocator whose allocate() calls your runtime's malloc and returns a self-freeing DataPtr, then drop it in the allocator table for PrivateUse1.","<b>白話：</b>張量的位元組總得有來源。你寫一個配置器，其 <code>allocate()</code> 呼叫你執行期的 malloc，並回傳會自我釋放的 <code>DataPtr</code>，再把它丟進 <code>PrivateUse1</code> 的配置器表。"],
+["Minimum effort: a plain malloc/free is fine — openreg's allocator does no caching (emptyCache and recordStream are no-op stubs) and it still works. The pinned/host allocator is stub ok: register it with REGISTER_HOST_ALLOCATOR(at::kPrivateUse1, ...) and expose it through the hooks, or skip it and pin_memory() simply will not accelerate. OpenRegDeviceAllocator.cpp:273 · host OpenRegHostAllocator.cpp:6","<b>最小心力：</b>單純的 malloc/free 就行—openreg 的配置器<b>完全不做快取</b>（<code>emptyCache</code> 與 <code>recordStream</code> 都是空操作樁），照樣能用。pinned/主機配置器是 <span class=\"badge b-stub\">可樁</span>：用 <code>REGISTER_HOST_ALLOCATOR(at::kPrivateUse1, ...)</code> 註冊並透過掛鉤揭露，或乾脆略過，那 <code>pin_memory()</code> 就只是不會加速。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegDeviceAllocator.cpp:273§ · 主機 §test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHostAllocator.cpp:6§"],
+["CUDA does not use the macro: it calls SetAllocator(kCUDA, r, /*priority=*/1) so the caching allocator (or cudaMallocAsync) can override the default (CUDACachingAllocator.cpp:5381). You do not need that for a first backend.","<b>CUDA 不用這個巨集</b>：它呼叫 <code>SetAllocator(kCUDA, r, /*priority=*/1)</code>，好讓快取配置器（或 <code>cudaMallocAsync</code>）能覆寫預設（§c10/cuda/CUDACachingAllocator.cpp:5381§）。第一個後端用不到這個。"],
+["must write The hooks interface","<span class=\"badge b-req\">必寫</span> 掛鉤介面"],
+["Feynman: when PyTorch wants a general fact about your device — \"are you available?\", \"how many devices?\", \"give me the default generator\", \"is this pointer pinned?\" — it does not call a kernel. It calls hooks: one object answering all these questions, handed to PyTorch once.","<b>白話：</b>當 PyTorch 想知道你裝置的一般事實—「可用嗎？」「幾個裝置？」「給我預設產生器」「這是 pinned 指標嗎？」—它不呼叫 kernel，而是呼叫<b>掛鉤</b>：一個回答所有這些問題的物件，啟動時交給 PyTorch 一次。"],
+["Minimum effort: override the few hooks you actually use (e.g. getDefaultGenerator, getPinnedMemoryAllocator, isPinnedPtr). Every hook you skip has a default that throws a clear \"not implemented\" at call time — so an unfinished hooks object still links and runs. OpenRegHooks.cpp:6 · base PrivateUse1HooksInterface.h:15","<b>最小心力：</b>只覆寫你實際會用到的少數掛鉤（例如 <code>getDefaultGenerator</code>、<code>getPinnedMemoryAllocator</code>、<code>isPinnedPtr</code>）。每個你略過的掛鉤都有一個<b>在被呼叫時才丟出清楚「未實作」</b>的預設—所以一個未完成的掛鉤物件照樣能連結與執行。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.cpp:6§ · 基底 §aten/src/ATen/detail/PrivateUse1HooksInterface.h:15§"],
+["Myth, debunkedYou may read that hasPrimaryContext is a pure-virtual you must override to compile. That is only true of the abstract AcceleratorHooksInterface. The class you actually subclass, PrivateUse1HooksInterface, already supplies a throwing default for it (PrivateUse1HooksInterface.h:15), so your subclass compiles without it — it just throws if called. Override it for correct behavior, not to satisfy the compiler.","<div class=\"t\">迷思破解</div>你可能讀過 <code>hasPrimaryContext</code> 是一個你<em>必須</em>覆寫才能編譯的純虛擬。那只對抽象的 <code>AcceleratorHooksInterface</code> 成立。你實際繼承的 <code>PrivateUse1HooksInterface</code> 早已為它提供了會丟例外的預設（§aten/src/ATen/detail/PrivateUse1HooksInterface.h:15§），所以你的子類別不覆寫它也能編譯—只是被呼叫時會丟例外。覆寫它是為了正確行為，而非為了討好編譯器。"],
+["GotchaRegister exactly once, and heap-allocate it (new) — core keeps the raw pointer for the whole process. A second registration hard-fails the process (PrivateUse1HooksInterface.cpp:8).","<div class=\"t\">注意</div><b>剛好註冊一次</b>，且用堆積配置（<code>new</code>）—核心保留這個裸指標整個行程生命週期。第二次註冊會讓行程硬性失敗（§aten/src/ATen/detail/PrivateUse1HooksInterface.cpp:8§）。"],
+["stub ok The generator (RNG)","<span class=\"badge b-stub\">可樁</span> 產生器（RNG）"],
+["Feynman: random ops need a per-device \"dice roller\" you can seed for reproducibility. The cheapest version reuses the CPU one: openreg derives its generator from at::CPUGeneratorImpl and just stamps the PrivateUse1 device/key on it — so randomness actually runs on CPU, which is fine to start.","<b>白話：</b>隨機運算需要一個可設種子、以求可重現的逐裝置「擲骰器」。最省事的版本沿用 CPU 的：openreg 從 <code>at::CPUGeneratorImpl</code> 衍生其產生器，只在上面蓋上 <code>PrivateUse1</code> 的裝置/鍵—所以亂數其實在 CPU 上跑，作為起步無妨。"],
+["Wire it through the hooks (the modern path): override getDefaultGenerator (one shared instance per device) and getNewGenerator (a fresh one). That is all torch.manual_seed needs. OpenRegHooks.h:85 · impl OpenRegGenerator.cpp:9","<b>透過掛鉤接線（現代做法）：</b>覆寫 <code>getDefaultGenerator</code>（每裝置一個共用實例）與 <code>getNewGenerator</code>（一個全新的）。<code>torch.manual_seed</code> 只需要這些。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.h:85§ · 實作 §test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGenerator.cpp:9§"],
+["There is an older REGISTER_GENERATOR_PRIVATEUSE1 macro; it is deprecated and warns. Use the hooks. A real accelerator later implements the full GeneratorImpl contract (like CUDAGeneratorImpl.cpp:50) so randomness runs on-device.","有一個較舊的 <code>REGISTER_GENERATOR_PRIVATEUSE1</code> 巨集；它已<b>棄用</b>且會警告。請用掛鉤。真正的加速器日後會實作完整的 <code>GeneratorImpl</code> 約定（像 §aten/src/ATen/cuda/CUDAGeneratorImpl.cpp:50§），讓亂數在裝置上跑。"],
+["OpenRegMinimal.cpp:119 (kernels) · OpenRegMinimal.cpp:141 (fallback). Contrast CUDA, which writes no such blocks: it lists dispatch: CUDA: empty_cuda in native_functions.yaml:2324 and codegen emits the registrations. Out-of-tree, there is no codegen — you hand-write TORCH_LIBRARY_IMPL.","§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp:119§（kernel）· §test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp:141§（回退）。對比 CUDA，它不寫這些區塊：它在 §aten/src/ATen/native/native_functions.yaml:2324§ 列出 <code>dispatch: CUDA: empty_cuda</code>，由 codegen 產生註冊。樹外沒有 codegen—你手寫 <code>TORCH_LIBRARY_IMPL</code>。"],
+["free Autograd. Because autograd is always on, even forward-only ops dispatch through AutogradPrivateUse1. PyTorch ships a generic fallback there that lets the forward pass through and only errors if a real backward is requested — so training-free inference works with zero autograd code. VariableFallbackKernel.cpp:111","<span class=\"badge b-free\">免費</span> <b>Autograd。</b>因為 autograd 永遠開著，連只有前向的運算也會經 <code>AutogradPrivateUse1</code> 分派。PyTorch 在那裡提供一個通用回退，讓前向通過，只有在真的需要反向時才報錯—所以免訓練的推論不需任何 autograd 程式碼。§aten/src/ATen/core/VariableFallbackKernel.cpp:111§"],
+["later Blocklist. The fallback can refuse specific ops so they raise a clear error instead of silently running slowly on CPU — openreg does this for abs to force a native kernel. Minimal.cpp:167","<span class=\"badge b-later\">之後</span> <b>黑名單。</b>回退可以拒絕特定運算，使其報出清楚的錯誤，而非默默在 CPU 上慢慢跑—openreg 對 <code>abs</code> 就這麼做，以逼出原生 kernel。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/native/Minimal.cpp:167§"],
+["later STUB ops (TensorIterator kernels like abs_stub) are a two-step trap: registering REGISTER_PRIVATEUSE1_DISPATCH(abs_stub, ...) does nothing unless you also register the structured out-variant abs.out under PrivateUse1. OpenRegExtra.cpp:137","<span class=\"badge b-later\">之後</span> <b>STUB 運算</b>（像 <code>abs_stub</code> 這類 TensorIterator kernel）是兩步陷阱：光註冊 <code>REGISTER_PRIVATEUSE1_DISPATCH(abs_stub, ...)</code> 沒有用，除非你<em>同時</em>在 <code>PrivateUse1</code> 下註冊結構化的 out 變體 <code>abs.out</code>。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegExtra.cpp:137§"],
+["TrapThe fallback lives in the wildcard _ namespace and uses m.fallback(), not m.impl(), and must be a boxed function (OperatorHandle, Stack*). A typed kernel will not work as a fallback.","<div class=\"t\">陷阱</div>回退住在通配的 <code>_</code> 命名空間，用 <code>m.fallback()</code> 而非 <code>m.impl()</code>，且必須是<b>裝箱（boxed）</b>函式（<code>OperatorHandle</code>、<code>Stack*</code>）。一般型別化的 kernel 不能當回退用。"],
+["free torch.accelerator, for nothing Once the key is registered, at::accelerator::getAccelerator picks PrivateUse1 as the active accelerator, so torch.accelerator.current_accelerator(), torch.accelerator.device_count() and friends route to your module with no extra Python wiring. DeviceAccelerator.cpp:8","<div class=\"t\"><span class=\"badge b-free\">免費</span> torch.accelerator，免費奉送</div>鍵一旦註冊，<code>at::accelerator::getAccelerator</code> 就選 <code>PrivateUse1</code> 為作用中的加速器，所以 <code>torch.accelerator.current_accelerator()</code>、<code>torch.accelerator.device_count()</code> 等都路由到你的模組，毋須額外 Python 接線。§aten/src/ATen/DeviceAccelerator.cpp:8§"],
+["GotchaThe ordering is enforced and the rename is once-per-process. Call rename_privateuse1_backend before the other two, and never twice — a second call (or a different name, or an in-tree name like \"cuda\") raises from C++ (DeviceType.cpp:140).","<div class=\"t\">注意</div>順序是強制的，且改名是每行程一次。先呼叫 <code>rename_privateuse1_backend</code> 再做另外兩步，且絕不呼叫兩次—第二次呼叫（或不同名稱，或像 <code>\"cuda\"</code> 這種樹內名稱）會從 C++ 報錯（§c10/core/DeviceType.cpp:140§）。"],
+["Build the native library. A CMakeLists.txt globs your csrc/*.cpp so every registrar (guard, allocator, hooks, ops) is compiled in — drop a new .cpp under csrc/ and it is picked up, no per-file edit. CMakeLists.txt:3","<b>建出原生函式庫。</b>一個 <code>CMakeLists.txt</code> 用 glob 收集你的 <code>csrc/*.cpp</code>，所以每個註冊器（守衛、配置器、掛鉤、運算）都會被編進去—在 <code>csrc/</code> 下放一個新 <code>.cpp</code> 就會被收，不需逐檔編輯。§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/CMakeLists.txt:3§"],
+["Link it into a Python _C extension. setup.py declares the extension and ships the .so. setup.py:116","<b>把它連進 Python <code>_C</code> 擴充。</b><code>setup.py</code> 宣告該擴充並隨附 <code>.so</code>。§test/cpp_extensions/open_registration_extension/torch_openreg/setup.py:116§"],
+["Declare autoload (optional but recommended) so users never type import torch_openreg. setup.py:145","<b>宣告 autoload</b>（選用但建議），讓使用者永遠不必打 <code>import torch_openreg</code>。§test/cpp_extensions/open_registration_extension/torch_openreg/setup.py:145§"],
+["Install and smoke-test: pip install -e ., then the e2e check below.","<b>安裝並煙霧測試：</b><code>pip install -e .</code>，接著跑下面的端到端檢查。"],
+["openreg builds two CMake libraries, which is worth understanding so you put files in the right place:","openreg 建出<b>兩個</b> CMake 函式庫，值得理解，好把檔案放對位置："],
+["torch_openreg — the runtime library: guard, allocator, hooks, generator, ops, serialization. Built from csrc/ (csrc/CMakeLists.txt:3).","<code>torch_openreg</code>—<b>執行期</b>函式庫：守衛、配置器、掛鉤、產生器、運算、序列化。由 <code>csrc/</code> 建出（§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/CMakeLists.txt:3§）。"],
+["torch_bindings — the Python _C extension (the PyMethodDef table). It links torch_openreg, so loading _C transitively loads the runtime library and fires all its static registrars.","<code>torch_bindings</code>—Python <code>_C</code> 擴充（那張 <code>PyMethodDef</code> 表）。它<b>連結</b> <code>torch_openreg</code>，所以載入 <code>_C</code> 會連帶載入執行期函式庫，並觸發它所有的靜態註冊器。"],
+["So the runtime registrations live in torch_openreg, not in the _C extension; the _C extension only exposes Python-callable helpers. CUDA, by contrast, is imported unconditionally inside the torch package (from torch import cuda, __init__.py:2300), so it needs no entry point.","所以執行期註冊住在 <code>torch_openreg</code>，而非 <code>_C</code> 擴充；<code>_C</code> 擴充只揭露 Python 可呼叫的輔助函式。相對地，CUDA 在 torch 套件內被無條件匯入（<code>from torch import cuda</code>，§torch/__init__.py:2300§），所以不需要進入點。"],
+["The entry point in the torch.backends group points at a function that is a deliberate no-op — all the real work happens as import side effects (the three lines from Chapter 5) when PyTorch imports your package to reach that function. PyTorch's autoload driver scans these at import torch. __init__.py:3011","<code>torch.backends</code> 群組裡的進入點指向一個刻意<b>空操作</b>的函式—真正的工作都發生在 PyTorch 為了到達該函式而匯入你套件時的<em>匯入副作用</em>（第 5 章那三行）。PyTorch 的 autoload 驅動在 <code>import torch</code> 時掃描這些。§torch/__init__.py:3011§"],
+["GotchaAny build script that imports torch while your half-built backend is installed will autoload it and fail. Set TORCH_DEVICE_BACKEND_AUTOLOAD=0 before import torch in build/codegen scripts — openreg's setup.py does exactly this. Also: a crash in your entry point breaks plain import torch for everyone who installed you, so keep it robust.","<div class=\"t\">注意</div>任何在你半成品後端已安裝時匯入 torch 的建置腳本，都會把它 autoload 進來而失敗。在建置/codegen 腳本中於 <code>import torch</code> 之前設 <code>TORCH_DEVICE_BACKEND_AUTOLOAD=0</code>—openreg 的 <code>setup.py</code> 正是這麼做。另外：你進入點裡的當機會讓所有安裝你的人連 <code>import torch</code> 都壞掉，所以務必讓它穩健。"],
+["Native kernels","原生 kernel"],
+["replace CPU fallbacks with real m.impl kernels / STUBs, op by op, for speed","用真正的 <code>m.impl</code> kernel / STUB 逐一取代 CPU 回退，換取速度"],
+["On-device RNG","裝置端 RNG"],
+["implement the full GeneratorImpl instead of borrowing CPU's","實作完整的 <code>GeneratorImpl</code>，而非借用 CPU 的"],
+["AMP / autocast","AMP / autocast（混合精度）"],
+["a fallthrough + per-op KERNEL_PRIVATEUSEONE casts, plus get_amp_supported_dtype() in Python","一個 fallthrough + 逐運算的 <code>KERNEL_PRIVATEUSEONE</code> 轉型，外加 Python 的 <code>get_amp_supported_dtype()</code>"],
+["Streams & events","Stream 與 event"],
+["real stream pool + event wrappers, driven by the guard's stream/event methods","真正的 stream pool + event 包裝，由守衛的 stream/event 方法驅動"],
+["Custom tensor metadata in save/load","存/載時的自訂張量中繼資料"],
+["subclass BackendMeta + REGISTER_PRIVATEUSE1_SERIALIZATION (storage-level save/load is already free)","繼承 <code>BackendMeta</code> + <code>REGISTER_PRIVATEUSE1_SERIALIZATION</code>（儲存層級的存/載已是 <span class=\"badge b-free\">免費</span>）"],
+["torch.compile support","torch.compile 支援"],
+["register Meta/fake kernels for shape inference on deviceless tensors","為無裝置的張量註冊 Meta/fake kernel 以做形狀推論"],
+["Distributed","分散式"],
+["a custom ProcessGroup backend","一個自訂的 <code>ProcessGroup</code> 後端"],
+["Chapter 8","第 8 章"],
+["The whole package: six small files","整個套件：六個小檔案"],
+["RVO is even leaner than openreg: one C++ file built by torch.utils.cpp_extension (no CMake), plus the three-line Python registration. The shape:","RVO 比 openreg 還精簡：用 <code>torch.utils.cpp_extension</code> 建一個 C++ 檔（不用 CMake），外加那三行 Python 註冊。長相如下："],
+["The registration is the same three lines from Chapter 5; the C++ is the same four registrars from Chapter 3, collapsed because device memory is host memory:","註冊就是第 5 章那三行；C++ 就是第 3 章那四個註冊器，因為裝置記憶體就是主機記憶體而被壓縮："],
+["Each registrar is the genuine API from Chapter 3: OpenRegGuard.cpp:6, OpenRegDeviceAllocator.cpp:273, OpenRegHooks.cpp:6, OpenRegMinimal.cpp:119 / :141. Copy the real op bodies (especially _copy_from) from openreg.","每個註冊器都是第 3 章的真實 API：§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegGuard.cpp:6§、§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegDeviceAllocator.cpp:273§、§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/runtime/OpenRegHooks.cpp:6§、§test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp:119§ / §test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/OpenRegMinimal.cpp:141§。把真正的運算主體（尤其是 §test/cpp_extensions/open_registration_extension/torch_openreg/csrc/aten/native/Minimal.cpp:81§ 的 _copy_from）從 openreg 複製過來。"],
+["Why it runs: the dispatch story","它為何跑得動：分派的故事"],
+["A Llama forward is an embedding, a stack of (RMSNorm, rotary attention, SwiGLU MLP), and a final projection. RVO implements none of that math — only the six memory/layout ops. Everything else routes to the CPU fallback. Probed live on the device:","一次 Llama 前向就是一個 embedding、一疊（RMSNorm、rotary 注意力、SwiGLU MLP），再加一個最終投影。RVO <b>完全不</b>實作這些數學&mdash;只實作那六個記憶體/排列運算。其餘全部路由到 CPU 回退。在裝置上實測探測："],
+["ATen op","ATen 運算"],
+["Has a PrivateUse1 kernel?","有 PrivateUse1 kernel 嗎？"],
+["Runs as","如何執行"],
+["yes","是"],
+["no","否"],
+["core kernel on device","<span class=\"badge b-req\">核心 kernel</span> 於裝置上"],
+["CPU fallback","<span class=\"badge b-stub\">CPU 回退</span>"],
+["mm, addmm, bmm (all the Linears + attention scores)","<code>mm</code>、<code>addmm</code>、<code>bmm</code>（所有 Linear + 注意力分數）"],
+["mul, rsqrt, mean (RMSNorm, rotary), cat, argmax, triu","<code>mul</code>、<code>rsqrt</code>、<code>mean</code>（RMSNorm、rotary）、<code>cat</code>、<code>argmax</code>、<code>triu</code>"],
+["That is the spine in one table: the device supplies memory and layout; the fallback supplies math; Llama runs. You make it fast later by replacing fallback rows with real kernels (Chapter 7), the heaviest first (mm/addmm).","這就是主軸的一表概覽：裝置提供<b>記憶體與排列</b>；回退提供<b>數學</b>；Llama 就跑起來了。日後要加速，就把回退那幾列換成真正的 kernel（第 7 章），最重的先換（<code>mm</code>/<code>addmm</code>）。"],
+["Captured live","實測擷取"],
+["8 · Worked example: RVO + TinyLlama","8 · 實作範例：RVO + TinyLlama"],
+["Worked example: RVO + TinyLlama-1.1B","實作範例：RVO + TinyLlama-1.1B"],
+["Let's actually do it. RVO is a made-up accelerator; we register it with the least code that works, then actually run TinyLlama-1.1B on it. The trick that makes it tiny: RVO's device memory is just host memory, so the ~10 core ops are one-liners and every real model op (matmul, attention, RMSNorm, softmax) rides the CPU fallback. The model runs correctly — at CPU speed — while genuinely dispatching as device=\"rvo\".","我們來真的做一遍。<b>RVO</b> 是一個虛構的加速器；我們用<b>最少、可運作</b>的程式碼註冊它，然後在它上面<b>真的跑 TinyLlama-1.1B</b>。讓它能這麼小的訣竅是：<b>RVO 的裝置記憶體其實就是主機記憶體</b>，所以那約 10 個核心運算都是一行，而每個真正的模型運算（matmul、注意力、RMSNorm、softmax）都騎在 CPU 回退上。模型<b>正確地</b>執行&mdash;以 CPU 速度&mdash;同時真正以 <code>device=\"rvo\"</code> 分派。"],
+["Run TinyLlama-1.1B","執行 TinyLlama-1.1B"],
+["Once rvo is installed, running a real LLM is one .to(\"rvo\") plus a short greedy loop. TinyLlama-1.1B is ungated, so this genuinely downloads and runs:","<code>rvo</code> 一旦安裝，跑一個真正的 LLM 只需一個 <code>.to(\"rvo\")</code> 加一段短短的貪婪迴圈。TinyLlama-1.1B <b>未設限（ungated）</b>，所以這真的會下載並執行："],
+["Needs pip install transformers + a ~2.2 GB download (no Hugging Face gating). We ran exactly this against openreg, RVO's in-tree twin — captured below.","需要 <code>pip install transformers</code> + 約 2.2&nbsp;GB 下載（無 Hugging Face 閘控）。我們就是對 openreg（RVO 的樹內雙生）跑了這段&mdash;擷取如下。"],
+["Two rough edges for a brand-new backendAn op-by-op diff against CPU shows every op is bit-exact on the device except the fused scaled_dot_product_attention (maxdiff ~2.6) — so TinyLlama is loaded with attn_implementation=\"eager\" (plain matmul + softmax, which the fallback reproduces exactly). Second, HF generate() mixes a CPU pad-token tensor with device tensors, so we drive a 5-line manual greedy loop instead. Both are gaps a real backend closes (implement SDPA; fix the stray CPU tensor) — neither stops the model from running.","<div class=\"t\">新後端的兩個粗糙邊角</div>對 CPU 做逐運算比對顯示，裝置上每個運算都位元精確，<b>唯獨那個融合的</b> <code>scaled_dot_product_attention</code> 例外（與 CPU 最大差 ~2.6）&mdash;所以 TinyLlama 以 <code>attn_implementation=\"eager\"</code> 載入（純 matmul + softmax，回退能完全重現）。其次，HF 的 <code>generate()</code> 會把 CPU 上的 pad-token 張量與裝置張量混用，所以我們改用 5 行手寫貪婪迴圈。兩者都是真正的後端會補上的缺口（實作 SDPA；修掉那個跑掉的 CPU 張量）&mdash;但都不妨礙模型跑起來。"],
+["Built RVO's in-tree twin (openreg) at the pinned commit and ran the real TinyLlama-1.1B-Chat (1.10B params, ungated) end to end on it — a prompt in, real text out, every tensor on openreg:0:","在固定 commit 上建出 RVO 的樹內雙生（openreg），並在它上面端到端跑了<b>真正的 TinyLlama-1.1B-Chat（11 億參數、未設限）</b>&mdash;丟進一個 prompt、吐出真實文字，每個張量都在 <code>openreg:0</code> 上："],
+["That answer is the genuine model output — bit-for-bit identical to a plain-CPU run (RVO_DEV=cpu). The whole transformer computes: every matmul, softmax and norm via the fallback, the allocations and copies via the six core kernels. Slow (no KV cache, no native kernels), but correct.","那個答案是模型的真實輸出&mdash;<b>與純 CPU 執行（<code>RVO_DEV=cpu</code>）逐位元相同</b>。整個 transformer 都算得出來：每個 matmul、softmax 與 norm 經由回退，配置與複製經由那六個核心 kernel。雖慢（無 KV 快取、無原生 kernel），但正確。"],
+["What's real, what's stand-inThe API in every snippet is genuine (anchored to openreg). The run is real: TinyLlama-1.1B-Chat (1.10B params) executed end to end on openreg (RVO's in-tree twin) at this commit and printed \"The capital of France is Paris.\", matching CPU. The only stand-in is csrc/rvo.cpp — a reading skeleton; lift the real, compilable bodies from openreg's csrc/.","<div class=\"t\">哪些是真的、哪些是替身</div>每段程式碼裡的 API 都是真的（錨定到 openreg）。這次執行是<b>真的</b>：TinyLlama-1.1B-Chat（11 億參數）在 openreg（RVO 的樹內雙生）於這個 commit 上端到端執行，並印出「The capital of France is Paris.」，與 CPU 相符。唯一的替身是 <code>csrc/rvo.cpp</code>&mdash;一份供閱讀的骨架；真正可編譯的主體請從 openreg 的 <code>csrc/</code> 取用。"],
+["Companion package (the patch / pseudo-code): agent_space/rvo/ — the files above, the real run_tinyllama.py, and the captured logs.","隨附套件（補丁／虛擬碼）：<code>agent_space/rvo/</code>&mdash;上面那些檔案、真正的 <code>run_tinyllama.py</code>，以及擷取的日誌。"],
+["Aligned with OpenReg and CUDA","與 OpenReg 和 CUDA 對齊"],
+["RVO isn't a new design — it's OpenReg's mechanism, trimmed, filling the same slots CUDA fills in-tree. Construct by construct:","RVO 不是新設計&mdash;它就是 OpenReg 的機制、精簡過，填的是 CUDA 在樹內所填的同一批插槽。逐一構件對照："],
+["Construct","構件"],
+["Aligned","是否對齊"],
+["all three","<span class=\"badge b-free\">三者皆同</span>"],
+["vs OpenReg","<span class=\"badge b-free\">對 OpenReg 一致</span>"],
+["Where CUDA differs — allocator via SetAllocator, hooks via a class registry, ops via codegen — that's the in-tree vs out-of-tree split from Chapters 3–4; a PrivateUse1 backend follows OpenReg's style. Two nuances: RVO marks getStream/exchangeStream noexcept like OpenReg (CUDA omits it — both legal), and the skeleton stubs streams/events and shows 2 of the ~10 core ops.","CUDA 不同之處&mdash;配置器用 <code>SetAllocator</code>、掛鉤用類別註冊表、運算用 codegen&mdash;正是第 3&ndash;4 章的樹內對樹外之分；PrivateUse1 後端遵循 OpenReg 的做法。兩個細節：RVO 像 OpenReg 一樣把 <code>getStream</code>/<code>exchangeStream</code> 標為 <code>noexcept</code>（CUDA 沒標&mdash;兩者皆合法），而這份骨架把 stream/event 留樁，並只展示約 10 個核心運算中的 2 個。"],
+["Build & run","建置與執行"],
+["Payoff test: once torch.empty(3, device=\"x\") and (x + 1).cpu() run, every required slot is filled — that is a registered device (and, per Chapter 8, enough to run TinyLlama-1.1B through the fallback).","驗收測試：只要 <code>torch.empty(3, device=\"x\")</code> 與 <code>(x + 1).cpu()</code> 跑得起來，每個必填插槽就都填好了&mdash;這就是一個已註冊的裝置（而且如第 8 章所示，足以讓 TinyLlama-1.1B 透過回退跑起來）。"],
+]);
+const PROSE_SEL="main p, main li, main h2, main h3, main h4, main summary, main dt, main dd, main td, main th, main .lead, main .note, main .ch, nav.toc a, nav.toc .sub";
+let proseEls=null;
+function translateProse(zh){
+ if(!proseEls){
+  proseEls=[...document.querySelectorAll(PROSE_SEL)].filter(el=>
+   !el.closest("pre, .src, #pipe, #stepDetail, #slotGrid, #actChips, #actVerdict, #opChips, #opLadder, #opVerdict"));
+  proseEls.forEach(el=>{el.__en=el.innerHTML;el.__key=(el.textContent||"").replace(/\s+/g," ").trim();});
+ }
+ proseEls.forEach(el=>{
+  const t=zh&&PROSE.get(el.__key);
+  el.innerHTML=t?t.replace(/§([^:§]+):(\d+)§/g,(m,p,l)=>pill(p,l)):el.__en;
+ });
+}
+function setLang(l){
+ document.documentElement.dataset.lang=l;
+ try{localStorage.setItem("dr1-lang",l);}catch(e){}
+ document.getElementById("langToggle").textContent=(l==="zh")?"EN":"繁中";
+ document.documentElement.lang=(l==="zh")?"zh-Hant":"en";
+ renderSteps();selStep(curStep);
+ renderSlots();renderActChips();if(curAct!==null)selAct(curAct);else actVerdictDefault();
+ renderOpChips();if(curOp!==null)selOp(curOp);else{renderLadder(null);opVerdictDefault();}
+ translateProse(l==="zh");
+}
+/* initial render (en) */
+renderSteps();selStep(0);
+renderSlots();renderActChips();actVerdictDefault();
+renderOpChips();renderLadder(null);opVerdictDefault();
+document.getElementById("langToggle").onclick=()=>setLang(document.documentElement.dataset.lang==="zh"?"en":"zh");
+(function(){let s="en";try{s=localStorage.getItem("dr1-lang")||"en";}catch(e){}if(s==="zh")setLang("zh");})();
+
+/* ---------- scroll spy ---------- */
+const links=[...document.querySelectorAll("nav.toc a")];
+const secs=links.map(a=>document.querySelector(a.getAttribute("href"))).filter(Boolean);
+const spy=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){const id="#"+e.target.id;
+ links.forEach(a=>a.classList.toggle("active",a.getAttribute("href")===id));}});},
+ {rootMargin:"-10% 0px -80% 0px"});
+secs.forEach(s=>spy.observe(s));
+</script>
+</body>
+</html>

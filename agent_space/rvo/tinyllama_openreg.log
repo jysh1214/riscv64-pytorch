@@ -1,0 +1,8 @@
+Loading weights:   0%|          | 0/201 [00:00<?, ?it/s]Loading weights:  41%|████      | 82/201 [00:00<00:00, 808.79it/s]Loading weights:  81%|████████  | 163/201 [00:00<00:00, 795.40it/s]Loading weights: 100%|██████████| 201/201 [00:00<00:00, 828.33it/s]
+loaded TinyLlama/TinyLlama-1.1B-Chat-v1.0: 1.10B params
+model on device: openreg:0
+output tensor device: openreg:0
+=== GENERATED TEXT ===
+The capital of France is Paris.
+=== END ===
+greedy-decoded 8 tokens on 'openreg' in 77.7s (0.10 tok/s, no KV cache)
